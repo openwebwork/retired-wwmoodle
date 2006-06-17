@@ -1,0 +1,71 @@
+<!-- This page defines the form to create or edit an instance of this module -->
+<!-- It is used from /course/mod.php.  The whole instance is available as $form. -->
+
+<?php
+// $Id$
+/// First we check that form variables have been initialised
+if (!isset($form->name)) {
+	$form->name = '';
+}
+if( !isset($form->intro) ) {
+	$form->intro = '';
+}
+if( !isset($form->set_id) ) {
+	$form->set_id = -1;
+}
+if( ! isset($form->gradeMethod) ) {
+	$form->gradeMethod = 1;
+}
+
+// ensure that there is a bridge for this course:
+$oCourse = get_record("course", "id", $form->course);
+$aMods = get_all_instances_in_course("wwmoodle", $oCourse);
+if( count($aMods) != 1 ) {
+	print_simple_box(get_string("hasNoBridge", "wwmoodle_set"), 'center', '', '#FFBBBB', 5, 'errorbox');
+	print_footer();
+	die;
+}
+
+// this is really hacky, but I need the contents of the lib.php for wwmoodle_set:
+require_once("../mod/wwmoodle_set/lib.php");
+?>
+
+<form name="form" method="post" action="mod.php">
+<center>
+<table cellpadding="5">
+<tr valign="top">
+    <td align="right"><label for='name'><b><?php  print_string("name") ?>:</b></label></td>
+    <td>
+        <input type="text" id='name' name="name" size="30" value="<?php  p($form->name) ?>">
+    </td>
+</tr>
+<!-- More rows go in here... -->
+<tr valign='top'>
+	<td align='right'><label for='set_id'><b><?php print_string("set_id", "wwmoodle_set"); ?>:</b></label><br />
+		<?php helpbutton("set_id", get_string("helpSet_id", "wwmoodle_set"), "wwmoodle_set", true, true); ?>
+	</td>
+	<td align='left'><?php wwmoodle_set_printSetSelect($form->course, $form->set_id); ?></td>
+</tr>
+<tr valign='top'>
+	<td align='right'><label for='gradeMethod'><b><?php print_string("gradeMethod", "wwmoodle_set"); ?>:</b></label><br />
+		<?php helpbutton("gradeMethod", get_string("helpGradeMethod", "wwmoodle_set"), "wwmoodle_set", true, true); ?>
+	</td>
+	<td align='left'><?php wwmoodle_set_printGradeMethodSelect($form->gradeMethod); ?></td>
+</tr>
+<!-- The following line for Moodle 1.5 prints the visibility setting form element -->
+<?php print_visible_setting($form); ?>
+
+</table>
+<!-- These hidden variables are always the same -->
+<input type="hidden" name='course'        value="<?php  p($form->course) ?>" />
+<input type="hidden" name="sesskey"     value="<?php  p($form->sesskey) ?>" />
+<input type="hidden" name='coursemodule'  value="<?php  p($form->coursemodule) ?>" />
+<input type="hidden" name='section'       value="<?php  p($form->section) ?>" />
+<input type="hidden" name='module'        value="<?php  p($form->module) ?>" />
+<input type="hidden" name='modulename'    value="<?php  p($form->modulename) ?>" />
+<input type="hidden" name='instance'      value="<?php  p($form->instance) ?>" />
+<input type="hidden" name='mode'          value="<?php  p($form->mode) ?>" />
+<input type="submit" value="<?php  print_string("savechanges") ?>" />
+</center>
+
+</form>

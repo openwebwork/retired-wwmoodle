@@ -1,0 +1,39 @@
+<?php
+// $Id$
+	if( empty($CFG->wwmoodle_webwork_db) ) {
+		$CFG->wwmoodle_webwork_db = "";
+	}
+	if( empty($CFG->wwmoodle_webwork_courses) ) {
+		$CFG->wwmoodle_webwork_courses = "/opt/webwork2/courses/";
+	}
+	if( empty($CFG->wwmoodle_webwork_delete) ) {
+		$CFG->wwmoodle_webwork_delete = "off";
+	}
+?>
+
+<form method="post" action="module.php" name="form">
+	<input type="hidden" name="sesskey" value="<?php echo $USER->sesskey ?>">
+	<table cellpadding="9" cellspacing="0" >
+		<tr valign='top'>
+			<td align="right"><label for='wwmoodle_webwork_db'><b>wwmoodle_webwork_db:</b></label></td>
+			<td><input type='text' name='wwmoodle_webwork_db' id='wwmoodle_webwork_db' value="<?php p($CFG->wwmoodle_webwork_db); ?>" /></td>
+			<td><?php print_string('webwork_db', 'wwmoodle'); ?></td>
+		</tr>
+		<tr valign='top'>
+			<td align='right'><label for='wwmoodle_webwork_courses'><b>wwmoodle_webwork_courses:</b></label></td>
+			<td><input type='text' name='wwmoodle_webwork_courses' id='wwmoodle_webwork_courses' value="<?php p($CFG->wwmoodle_webwork_courses); ?>" /></td>
+			<td><?php print_string('webwork_courses', 'wwmoodle'); ?></td>
+		</tr>
+		<tr valign='top'>
+			<td align='right'><label for='wwmoodle_webwork_delete'><b>wwmoodle_webwork_delete:</b></label></td>
+			<td><select name='wwmoodle_webwork_delete' id='wwmoodle_webwork_delete'>
+				<option value='on' <?php p("on" == $CFG->wwmoodle_webwork_delete ? "selected='selected'" : ""); ?>><?php print_string('on', 'wwmoodle'); ?></option>
+				<option value='off' <?php p("off" == $CFG->wwmoodle_webwork_delete ? "selected='selected'" : ""); ?>><?php print_string('off', 'wwmoodle'); ?></option>
+			</select></td>
+			<td><?php print_string('webwork_delete', 'wwmoodle'); ?></td>
+		</tr>
+		<tr>
+			<td colspan="3" align="center"><input type="submit" value="<?php print_string("savechanges") ?>" /></td>
+		</tr>
+	</table>
+</form>

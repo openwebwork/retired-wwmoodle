@@ -1,0 +1,244 @@
+wwmoodle
+
+The WeBWorK/Moodle Bridge
+
+Peter Snoblin
+
+<pas@truman.edu>
+
+Copyright ? 2005 Peter Snoblin
+
+This work is licensed under the Creative Commons Attribution 2.5 License. To
+view a copy of this license, visit http://creativecommons.org/licenses/by/2.5/
+or send a letter to Creative Commons, 543 Howard Street, 5th Floor, San
+Francisco, California, 94105, USA.
+
+-------------------------------------------------------------------------------
+
+Table of Contents
+
+1. Introduction and Assumptions
+
+    Introduction
+    Assumptions
+
+2. Installing WeBWorK
+3. Configuring WeBWorK
+4. Moodle Modules
+5. Using wwmoodle
+
+Chapter 1. Introduction and Assumptions
+
+Table of Contents
+
+Introduction
+Assumptions
+
+Introduction
+
+wwmoodle is a set of software that enables the bridging of Moodle and WeBWorK.
+The goal of this bridge is to eliminate as much of the overlap between Moodle
+and WeBWorK's models. The particular focus is on establishing an unified store
+of information about users, courses, and the rights of those users with respect
+to each course. Given that this package was developed in an environment with an
+existing Moodle server, but no WeBWorK server, Moodle is considered to be the
+authoritative source for all of this information. Additionally, given the
+nature of how courses are defined within WeBWorK (as a combination of both
+database tables and file system objects) there is neither an immediate nor
+one-to-one mapping of courses between WeBWorK and Moodle. Instead, there is a
+Moodle module that ensures that a WeBWorK course exists for any Moodle course
+it is added to.
+
+Assumptions
+
+Throughout this document I will make several assumptions:
+
+  * WeBWorK is installed at /opt/webwork2.
+
+  * Moodle is installed at /var/www/moodle.
+
+You are, of course, free to use different locations, however you should be
+careful to adapt the instructions herein to your setup.
+
+Additionally, if you are using the MySQL database server, I assume that you are
+using version 4.1 or newer.
+
+Chapter 2. Installing WeBWorK
+
+This section details how to install WeBWorK itself, as well as configure it for
+use with Moodle. If you already have WeBWorK installed, you want Chapter 3,
+Configuring WeBWorK.
+
+ 1. Download the WeBWorK and PG tarballs from the SourceForge website: http://
+    sourceforge.net/projects/openwebwork.
+
+ 2. Follow the installation instructions on the WeBWorK Wiki through the step
+    on "Configuring Apache," being sure to follow the instructions for using
+    the sql_single database schema: http://devel.webwork.rochester.edu/twiki/
+    bin/view/Webwork/InstallationManualV2pt1.
+
+     a. When you create database users for webwork, ensure that these users
+        also have the same permission sets on your Moodle database.
+
+     b. When modifying database.conf as per the instructions, use the
+        database.conf file that comes with wwmoodle rather than the one from
+        WeBWorK. (It is at WeBWorK/conf/database.conf in the wwmoodle tarball.)
+        Be sure to set $sqlMoodleSource to an appropriate value, in addition to
+        the items mentioned by WeBWorK installation manual.
+
+ 3. Create the administrative "course" by following the instructions from the
+    WeBWorK Wiki: http://devel.webwork.rochester.edu/twiki/bin/view/Webwork/
+    CourseAdministrationManual#The_admin_course.
+
+Chapter 3. Configuring WeBWorK
+
+Once you have a working installation of WeBWorK you will need to configure it
+to use Moodle for user authentication and access control.
+
+ 1. From the wwmoodle tarball copy the folder WeBWorK/lib/DB/Schema/Moodle to /
+    opt/webwork2/lib/WeBWorK/DB/Schema.
+
+    cp -r WeBWorK/lib/DB/Schema/Moodle /opt/webwork2/lib/WeBWorK/DB/Schema/
+
+ 2. Edit /opt/webwork2/conf/database.conf to include the section from the
+    wwmoodle tarball file WorK/conf/database.conf starting at line 325. NOTE:
+    You don't have to do this if you followed the instructions from Chapter 2,
+    Installing WeBWorK.
+
+      * Be sure to set $sqlMoodleSource to an appropriate value.
+
+ 3. IF you want all courses created with WeBWorK's tools to use Moodle by
+    default, edit /opt/webwork2/conf/global.conf so that $dbLayoutName (found
+    around line 333) has the value "sql_moodle".
+
+At this point WeBWorK will use Moodle to enumerate users and determine what
+access rights they have. However, users will still have to log in to WeBWorK
+even if they are already logged in to Moodle. If you want to remove this
+restriction follow these steps:
+
+ 1. From the wwmoodle tarball, copy the file WeBWorK/lib/Authen.pm to /opt/
+    webwork2/lib/WeBWorK.
+
+    cp WeBWorK/lib/Authen.pm /opt/webwork2/lib/WeBWorK/
+
+ 2. From the wwmoodle tarball, copy the file WeBWorK/lib/DB.pm to /opt/webwork2
+    /lib/WeBWorK.
+
+    cp WeBWorK/lib/DB.pm /opt/webwork2/lib/WeBWorK/
+
+ 3. Ensure that you have the PHP::Serialization Perl module installed.
+
+      * To check if you already have it, execute the following command at a
+        shell prompt:
+
+        perl -MPHP::Serialization -e 'print "installed.\n";'
+
+      * If that command gave you an error message, you can install the module
+        from CPAN as follows:
+
+        perl -MCPAN -e "install PHP::Serialization"
+
+ 4. Within Moodle ensure that you have configured session data to be stored in
+    the database.
+
+     a. Log in to Moodle as an administrator and select the "Configuration"
+        option.
+
+     b. Scroll down to the "Operating System" section and find the "dbsession"
+        option.
+
+     c. Ensure it is set to "Yes".
+
+At this point any course set to use "sql_moodle" as it's database schema will
+get it's user list and access rights from the Moodle course with the same short
+name (eg: CS435) as the WeBWorK course.
+
+You must now also decide if you want all Moodle administrators to be WeBWorK
+admins. If so, edit the file /opt/webwork2/courses/admin/course.conf and change
+the value of $dbLayoutName (around line 35) to "sql_moodle".
+
+Chapter 4. Moodle Modules
+
+Once you have WeBWorK itself setup, it is time to install the two Moodle
+modules. The first of these handles synchronization of Moodle courses and
+WeBWorK courses, while the second allows teachers to assign WeBWorK sets from
+within Moodle.
+
+ 1. From the wwmoodle tarball, copy the folder Moodle/wwmoodle to /var/www/
+    moodle/mod/.
+
+    cp -r Moodle/wwmoodle/ /var/www/moodle/mod/
+
+ 2. Move the file /var/www/moodle/mod/wwmoodle/lang.php to /var/www/moodle/lang
+    /en/wwmoodle.php.
+
+    mv /var/www/moodle/mod/wwmoodle/lang.php /var/www/moodle/lang/en/wwmoodle.php
+
+ 3. Move the folder /var/www/moodle/mod/wwmoodle/help to /var/www/moodle/lang/
+    en/help/wwmoodle.
+
+    mv /var/www/moodle/mod/wwmoodle/help/ /var/www/moodle/lang/en/help/wwmoodle
+
+ 4. From the wwmoodle tarball, copy the folder Moodle/wwmoodle_set to /var/www/
+    moodle/mod.
+
+    cp -r Moodle/wwmoodle_set/ /var/www/moodle/mod/
+
+ 5. Move the file /var/www/moodle/mod/wwmoodle_set/lang.php to /var/www/moodle/
+    lang/en/wwmoodle_set.php.
+
+    mv /var/www/moodle/mod/moodle_set/lang.php /var/www/moodle/lang/en/wwmoodle_set.php
+
+ 6. Move the folder /var/www/moodle/mod/wwmoodle_set/help to /var/www/moodle/
+    lang/en/help/wwmoodle_set.
+
+    mv /var/www/moodle/mod/wwmoodle_set/help/ /var/www/moodle/lang/en/help/wwmoodle_set
+
+ 7. Log in to Moodle as an administrative user and go to the "Admin..."
+    section. The two new modules should be set up automatically.
+
+ 8. Go to Moodle's module configuration page and configure "WeBWorK/Moodle
+    Bridge" and "WeBWorK Problem Set".
+
+With that you are now ready to use WeBWorK from within your Moodle courses.
+
+Do please note that at this time, there are no alternate language to English
+for wwmoodle. However, if you would like to translate it, feel free to send me
+your translations and I will include them in future releases.
+
+Chapter 5. Using wwmoodle
+
+Once you have wwmoodle fully installed you will, no doubt, want to use it in
+your courses. Doing so is fairly simple:
+
+ 1. Log in to Moodle as a teacher of the course which you wish to use with
+    WeBWorK.
+
+ 2. Go to the home page for that course and "Turn editing on".
+
+ 3. Under the "Weekly Outline" heading there should be a drop-down box entitled
+    "Add an activity...". Select "WeBWorK/Moodle Bridge" from this box.
+
+ 4. Fill out the form presented to you.
+
+      * The name of the bridge doesn't matter much, though you should use
+        something that makes sense.
+
+      * It is suggested that you choose to hide the bridge from students, as it
+        will never contain any content.
+
+Once you have added the bridge you may now add homework sets from WeBWorK:
+
+ 1. Before you can assign a set, you must first create one via WeBWorK. This
+    process is beyond the scope of this document.
+
+ 2. After logging in to Moodle and ensuring you "Turn editing on", find the
+    week where you would like the set to be.
+
+ 3. From the "Add an activity..." drop-down box select "WeBWorK Problem Set".
+
+ 4. Fill out the form presented to you.
+
+As your students complete the assigned set you will be able to view their
+grades from within Moodle with the normal "Grades" tool.
+

@@ -1,0 +1,45 @@
+wwmoodle - WeBWork Moodle Integration
+Architectural Overview
+
+There are several core issues:
+ - Course, Teacher, and Student list integration
+ - Data sharing
+ - Authentication sharing
+ - Access Control
+
+Proposed solutions:
+
+Course, Teacher, Student list integration:
+As we are currently using Moodle, it shall be the authoritative source of this data.
+In turn, WeBWork will be modified to use moodle's stores of such information.
+
+Potential Problems:
+	- WeBWork may store data on one or more of these groups that moodle does not. Additionally, it may use a different keying system (eg varchar(n) vs int).
+	- In the future, we plan to use authentication and possible user enumeration from the TRUMAN domain. WeBWork will need to adapt to this as well.
+Potential Solutions:
+	- Create a new relation for WeBWork that stores the extra data for the given entities. (This way we avoid making for a difficult Moodle upgrade).
+	- Ideally, call Moodle function directly -- however this may not be possible due to language issues.
+
+Data Sharing:
+	- Moodle needs to be able to read grades and the like from WeBWork.
+	- Teachers need to be able to create WeBWork problem sets.
+Potential Solutions:
+	- The wwmoodle module can simply read from the database that WeBWork writes.
+	- Inclusion of the WeBWork UI as an iframe would essentially solve this problem. However that is a bit sloppy.
+	 - Possibly write a new UI and just post to the CGIs (modify them to send you back to the right place?)
+
+Authentication Sharing:
+	- Once a student or teacher has authenticated to moodle they shouldn't need to reauthenticate to WeBWork.
+Potential Solutions:
+	- WeBWork should be able to read any cookie set by Moodle (though some tweaking of moodle may be needed).
+	 - However, it may then have to lookup the session key in the database, find out the userid and look that up.
+	  - Would require Moodle use database storage, and would require a php array deserializer for perl (easy enough to fake though)
+	 - Alternately it could pass the uid as a parameter (but that would be a bad idea...)
+
+Access Control:
+	- When can a student work on a problem set?
+	 - There should be an "on" time, when the set becomes available.
+	 - There should be an "off" time, after which no changes can be made.
+Potential Solutions:
+	- Most likely, WeBWork has facilities for this, and it should simply be a matter of tying that into moodle.
+
