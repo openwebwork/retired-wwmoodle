@@ -1,5 +1,5 @@
 <?php
-// $Id: lang.php,v 1.1.1.1 2006-06-17 21:45:25 sh002i Exp $
+// $Id: lang.php,v 1.1 2006-06-24 01:34:47 sh002i Exp $
 // language strings for wwmoodle_set
 // TODO: merge with proper language stuff
 

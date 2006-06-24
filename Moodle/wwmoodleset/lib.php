@@ -1,5 +1,5 @@
 <?php
-// $Id: lib.php,v 1.1.1.1 2006-06-17 21:45:25 sh002i Exp $
+// $Id: lib.php,v 1.1 2006-06-24 01:34:47 sh002i Exp $
 require_once("DB.php");
 /// Library of functions and constants for module wwmoodle_set
 

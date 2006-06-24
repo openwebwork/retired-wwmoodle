@@ -1,5 +1,5 @@
 <?php
-// $Id: view.php,v 1.1.1.1 2006-06-17 21:45:25 sh002i Exp $
+// $Id: view.php,v 1.1 2006-06-24 01:34:47 sh002i Exp $
 
 /// This page prints a particular instance of wwmoodle_set
 /// (Replace wwmoodle_set with the name of your module)

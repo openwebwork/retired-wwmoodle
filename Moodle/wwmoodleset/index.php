@@ -1,5 +1,5 @@
 <?php
-// $Id: index.php,v 1.1.1.1 2006-06-17 21:45:25 sh002i Exp $
+// $Id: index.php,v 1.1 2006-06-24 01:34:47 sh002i Exp $
 
 /// This page lists all the instances of wwmoodle_set in a particular course
 /// Replace wwmoodle_set with the name of your module
