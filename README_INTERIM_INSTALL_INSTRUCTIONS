@@ -1,0 +1,26 @@
+This module is undergoing rapid change as of June 2006.  It starts with code written by Peter Snoblin at
+Truman University.  It is being modified to work with WeBWorK release  2.2.1 and later.
+
+6/24/2006
+For webwork make sure that you are updated to HEAD (cvs update -A -d ).  In particular make sure that there is a directory
+lib/WeBWorK/DB/Schema/Moodle and that it contains files.  This current HEAD will soon be tagged as rel-2-2-1
+
+Update global.conf and database.conf from the corresponding distribution files.  In particular database.conf should have 
+a schema labeled sql_moodle.
+
+The files in the WeBWorK subdirectory of this module are for historical purposes.  They have been superceeded by new files in
+the HEAD (aka rel-2-2-1) version of WeBWorK.
+
+From the Moodle directory of this module:
+Move  wwmoodle and wwmoodleset   to    moodle/mod   in the moodle tree.  wwmoodle_set is for historical purposes only and will not
+be used.
+
+Use symlinks to link wwmoodle/help  to the alias ...../moodle/lang/en/help/wwmoodle
+                     wwmoodleset/help to         ...../moodle/lang/en/help/wwmoodleset
+                     wwmoodle/lang.php           ...../moodle/lang/en/wwmoodle.php
+                     wwmoodleset/lang.php        ...../moodle/lang/en/wwmoodleset.php
+
+(the .....  refers to the nodes above where the moodle tree starts)
+
+If you transfer the CVS directories then you will still be able to update wwmoodle and wwmoodleset from the CVS in their new 
+locations.
