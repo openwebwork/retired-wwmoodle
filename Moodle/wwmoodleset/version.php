@@ -1,7 +1,7 @@
 <?php
-// $Id: version.php,v 1.1 2006-06-24 01:34:47 sh002i Exp $
+// $Id: version.php,v 1.2 2006-06-24 01:47:01 sh002i Exp $
 /////////////////////////////////////////////////////////////////////////////////
-///  Code fragment to define the version of wwmoodle_set
+///  Code fragment to define the version of wwmoodleset
 ///  This fragment is called by moodle_needs_upgrading() and /admin/index.php
 /////////////////////////////////////////////////////////////////////////////////
 

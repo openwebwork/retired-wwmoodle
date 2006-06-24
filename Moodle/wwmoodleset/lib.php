@@ -1,12 +1,32 @@
 <?php
-// $Id: lib.php,v 1.1 2006-06-24 01:34:47 sh002i Exp $
-require_once("DB.php");
-/// Library of functions and constants for module wwmoodle_set
+// $Id: lib.php,v 1.2 2006-06-24 01:47:01 sh002i Exp $
+//require_once("DB.php");
+function debug_log($obj) {
+	$fh = fopen("/home/gage/moodle_debug", "w");
+	//fwrite($fh,  "wwmoodle\n");
+	$struct = print_r($obj, true);
+	fwrite($fh, $struct);
+	fwrite($fh, "\n");
+	fclose($fh);
+	//MEG
+}
+//MEG
+$path = ini_get('include_path');
+//debug_log($path);
+//ini_set('include_path', $path . ':/usr/local/lib/php/pear/DB');
+//ini_set('include_path', $path . 'lib/adodb');
+//require_once("PEAR.php");
+//require_once("DB.php");
+require_once($CFG->libdir.'/adodb/adodb-pear.inc.php');
+//endMEG
+
+/// Library of functions and constants for module wwmoodleset
 
 /**
  * The URL of your WeBWorK installation.
  */
-define('WWMOODLE_SET_WEBWORK_URL', $CFG->wwmoodle_set_webwork_url);
+define('WW_TABLE_PREFIX', 'webwork');
+define('WWMOODLE_SET_WEBWORK_URL', $CFG->wwmoodleset_webwork_url);
 /**
  * The PEAR::DB connection string to connect to the WeBWorK database.
  * This is in the form:
@@ -15,11 +35,14 @@ define('WWMOODLE_SET_WEBWORK_URL', $CFG->wwmoodle_set_webwork_url);
  */
 define('WWMOODLE_SET_WEBWORK_DB', $CFG->wwmoodle_webwork_db);
 
-function wwmoodle_set_gradeMethods() {
+
+function wwmoodleset_gradeMethods() {
+
 	return array(
-		1 => array('name' => get_string("gradeSimple", "wwmoodle_set"), 'formula' => '$fGrade += ($p[\'num_correct\'] > 0) ? 1 : 0;'),
-		2 => array('name' => get_string("gradeDeductRetry", "wwmoodle_set"), 'formula' => '$fGrade += $p[\'num_correct\']/$p[\'attempted\'];'),
+		0 => array('name' => get_string("gradeSimple", "wwmoodleset"), 'formula' => '$fGrade += ($p[\'num_correct\'] > 0) ? 1 : 0;'),
+		1 => array('name' => get_string("gradeDeductRetry", "wwmoodleset"), 'formula' => '$fGrade += $p[\'num_correct\']/$p[\'attempted\'];'),
 	);
+
 }
 
 /**
@@ -27,10 +50,11 @@ function wwmoodle_set_gradeMethods() {
  * @param int $iGradeMethod The current grade method.
  * @return void
  */
-function wwmoodle_set_printGradeMethodSelect($iGradeMethod='-1') {
-	$wwmoodle_set_gradeMethods = wwmoodle_set_gradeMethods();
+function wwmoodleset_printGradeMethodSelect($iGradeMethod='-1') {
+    debug_log("printGrademethodSelect called");
+	$wwmoodleset_gradeMethods = wwmoodleset_gradeMethods();
 	print("<select id='gradeMethod' name='gradeMethod'>\n");
-	foreach( $wwmoodle_set_gradeMethods as $k=>$g ) {
+	foreach( $wwmoodleset_gradeMethods as $k=>$g ) {
 		print("\t<option value='$k'");
 		if( $k == $iGradeMethod ) {
 			print(" selected='selected'");
@@ -46,21 +70,33 @@ function wwmoodle_set_printGradeMethodSelect($iGradeMethod='-1') {
  * @param string $sCourseName The name of this course.
  * @return int
  */
-function wwmoodle_set_getMaxSetGrade($iSetId, $sCourseName) {
-	$db =& DB::connect(WWMOODLE_SET_WEBWORK_DB);
-	if( DB::isError($db) ) {
-		return -1;
-	}
-	$qry = "SELECT COUNT(*) FROM {$sCourseName}_problem WHERE set_id=?";
-	$res = $db->query($qry, array($iSetId));
-	if( DB::isError($res) ) {
-		$db->disconnect();
-		return -1;
-	}
-	$row = $res->fetchRow(DB_FETCHMODE_ASSOC);
+function wwmoodleset_getMaxSetGrade($iSetId, $sCourseName) {
+	global $db, $CFG;
+    if (!$res = $db->Execute($sql)) {
+        if (isset($CFG->debug) and $CFG->debug > 7) {
+            notify($db->ErrorMsg() .'<br /><br />'. $sql);
+        }
+        if (!empty($CFG->dblogerror)) {
+            $debug=array_shift(debug_backtrace());
+            error_log("SQL ".$db->ErrorMsg()." in {$debug['file']} on line {$debug['line']}. STATEMENT:  $sql");
+        }
+        return false;
+    }
+
+	$qry = "SELECT COUNT(*) FROM ". WW_TABLE_PREFIX.".{$sCourseName}_problem WHERE set_id=?";
+	if (!$res = $db->query($qry, array($iSetId))) {
+        if (isset($CFG->debug) and $CFG->debug > 7) {
+            notify($db->ErrorMsg() .'<br /><br />'. $sql);
+        }
+        if (!empty($CFG->dblogerror)) {
+            $debug=array_shift(debug_backtrace());
+            error_log("SQL ".$db->ErrorMsg()." in {$debug['file']} on line {$debug['line']}. STATEMENT:  $sql");
+        }
+        return false;
+    }
+	$row = $res->fetchRow();
 	$res->free();
-	$db->disconnect();
-	return $row ? $row[0] : -1;
+	return $row ? $row['COUNT(*)'] : -1;
 }
 
 /**
@@ -70,21 +106,23 @@ function wwmoodle_set_getMaxSetGrade($iSetId, $sCourseName) {
  * @param string $sCourseName The name of this course.
  * @return array An array of the results of all the problems for this user.
  */
-function wwmoodle_set_getProblemsForUser($sUserName, $iSetId, $sCourseName) {
-	$db =& DB::connect(WWMOODLE_SET_WEBWORK_DB);
-	if( DB::isError($db) ) {
-		return array();
-	}
-	$qry = "SELECT * FROM {$sCourseName}_problem_user WHERE user_id=? AND set_id=? ORDER BY problem_id";
-	$res = $db->query($qry, array($sUserName, $iSetId));
-	if( DB::isError($res) ) {
-		$db->disconnect();
-		return array();
-	}
-	$row = $res->fetchRow(DB_FETCHMODE_ASSOC);
-	!$row ? $row = array() : $row = $row;
-	$res->free();
-	$db->disconnect();
+function _wwrpc_getProblemsForUser($sUserName, $iSetId, $sCourseName) {
+	debug_log("start getProblemsForUser");
+    global $db, $CFG;
+ 	$qry = "SELECT * FROM ". WW_TABLE_PREFIX.".{$sCourseName}_problem_user WHERE user_id=? AND set_id=? ORDER BY problem_id";
+	if (!$res = $db->query($qry, array($sUserName, $iSetId))) {
+        if (isset($CFG->debug) and $CFG->debug > 7) {
+            notify($db->ErrorMsg() .'<br /><br />'. $sql);
+        }
+        if (!empty($CFG->dblogerror)) {
+            $debug=array_shift(debug_backtrace());
+            error_log("SQL ".$db->ErrorMsg()." in {$debug['file']} on line {$debug['line']}. STATEMENT:  $sql");
+        }
+        return false;
+    }
+ 	$row = $res->fetchRow();
+ 	!$row ? $row = array() : $row = $row;
+ 	$res->free();
 	return $row;
 }
 
@@ -94,7 +132,7 @@ function wwmoodle_set_getProblemsForUser($sUserName, $iSetId, $sCourseName) {
  * @param string $sCourseName The name of this course.
  * @return string The URL to the specified set. This might be absolute, or relative. However, it is assured of working.
  */
-function wwmoodle_set_linkToSet($iSetId, $sCourseName) {
+function wwmoodleset_linkToSet($iSetId, $sCourseName) {
 	// TODO: Verify me.
 	return WWMOODLE_SET_WEBWORK_URL."/$sCourseName/$iSetId";
 }
@@ -104,7 +142,7 @@ function wwmoodle_set_linkToSet($iSetId, $sCourseName) {
  * @param int $iCourseID The ID of the course.
  * @return string The shortname of the course, with unsafe characters removed. If the courseID is not found, null is returned.
  */
-function wwmoodle_set_courseIdToShortName($iCourseId) {
+function wwmoodleset_courseIdToShortName($iCourseId) {
 	$c = get_record('course', 'id', $iCourseId);
 	if( ! $c ) {
 		return null;
@@ -119,22 +157,26 @@ function wwmoodle_set_courseIdToShortName($iCourseId) {
  * @param $sCourseName The name of this course
  * @return array Information about the set.
  */
-function wwmoodle_set_getSetInfo($iSetId, $sCourseName) {
-	$db =& DB::connect(WWMOODLE_SET_WEBWORK_DB);
-	if( DB::isError($db) ) {
-		return array('set_id' => $iSetId, 'set_header' => "Unable to get information for this set.", 'hardcopy_header' => "Unable to get information for this set.", 'open_date'=>time(), 'due_date'=>time(), 'answer_date'=>time(), 'published'=>time());
-	}
-	$qry = "SELECT * FROM {$sCourseName}_set WHERE set_id=?";
-	$res = $db->query($qry, array($iSetId));
-	if( DB::isError($res) ) {
-		return array('set_id' => $iSetId, 'set_header' => "Unable to get information for this set.", 'hardcopy_header' => "Unable to get information for this set.", 'open_date'=>time(), 'due_date'=>time(), 'answer_date'=>time(), 'published'=>time());
-	}
-	$row = $res->fetchRow(DB_FETCHMODE_ASSOC);
+function wwmoodleset_getSetInfo($iSetId, $sCourseName) {
+	global $db, $CFG;
+	$qry = "SELECT * FROM ". WW_TABLE_PREFIX.".{$sCourseName}_set WHERE set_id=?";
+    //error_log("get info for set $iSetID and $sCourseName");
+	if (!$res = $db->query($qry, array($iSetId))) {
+        if (isset($CFG->debug) and $CFG->debug > 7) {
+            notify($db->ErrorMsg() .'<br /><br />'. $sql);
+        }
+        if (!empty($CFG->dblogerror)) {
+            $debug=array_shift(debug_backtrace());
+            error_log("SQL ".$db->ErrorMsg()." in {$debug['file']} on line {$debug['line']}. STATEMENT:  $sql");
+        }
+        return false;
+    }
+	$row = $res->fetchRow();
 	if( ! $row ) {
 		return array('set_id' => $iSetId, 'set_header' => "Unable to get information for this set.", 'hardcopy_header' => "Unable to get information for this set.", 'open_date'=>time(), 'due_date'=>time(), 'answer_date'=>time(), 'published'=>time());
 	}
 	$res->free();
-	$db->disconnect();
+	//error_log("result from getSetInfo");
 	return $row;
 }
 
@@ -146,32 +188,34 @@ function wwmoodle_set_getSetInfo($iSetId, $sCourseName) {
  * @param int $iSetId The set id to have selected.
  * @return void
  */
-function wwmoodle_set_printSetSelect($iCourseId, $iSetId=-1) {
-	$sCourseName = wwmoodle_set_courseIdToShortName($iCourseId);
+function wwmoodleset_printSetSelect($iCourseId, $iSetId=-1) {
+	global $db, $CFG;
+	debug_log("starting printSetSelect");
+	$sCourseName = wwmoodleset_courseIdToShortName($iCourseId);
 	if( is_null($sCourseName) ) {
 		print("<b>Unable to find the name of this course.</b>\n");
 		return;
 	}
 	
 	// now get a list of all sets for this course:
-	$db =& DB::connect(WWMOODLE_SET_WEBWORK_DB);
-	if( DB::isError($db) ) {
-		print("<b>Unable to connect to WeBWorK database.</b>\n");
-		return;
-	}
-	$qry = "SELECT * FROM {$sCourseName}_set ORDER BY open_date DESC";
-	$res = $db->query($qry);
-	if( DB::isError($res) ) {
-		print("<b>Unable to get a list of sets for this course.</b>\n");
-		return;
-	}
+	$qry = "SELECT * FROM ". WW_TABLE_PREFIX.".{$sCourseName}_set ORDER BY open_date DESC";
+	if (!$res = $db->query($qry)) {
+        if (isset($CFG->debug) and $CFG->debug > 7) {
+            notify($db->ErrorMsg() .'<br /><br />'. $sql);
+        }
+        if (!empty($CFG->dblogerror)) {
+            $debug=array_shift(debug_backtrace());
+            error_log("SQL ".$db->ErrorMsg()." in {$debug['file']} on line {$debug['line']}. STATEMENT:  $sql");
+        }
+        return false;
+    }
 	$aSets = array();
-	while( NULL !== ($row = $res->fetchRow(DB_FETCHMODE_ASSOC)) ) {
-		$aSets[] = $row['set_id'];
-	}
+	debug_log("got sets");
+ 	while( $row = $res->fetchRow() ) {
+ 		$aSets[] = $row['set_id'];
+ 	}
 	$res->free();
 	
-	$db->disconnect();
 	
 	// now print the option box, if we have any to print:
 	if( count($aSets) < 1 ) {
@@ -191,61 +235,127 @@ function wwmoodle_set_printSetSelect($iCourseId, $iSetId=-1) {
 	print("</select>\n");
 }
 
-function wwmoodle_set_add_instance($wwmoodle_set) {
+function wwmoodleset_add_instance($wwmoodleset) {
 /// Given an object containing all the necessary data, 
 /// (defined by the form in mod.html) this function 
 /// will create a new instance and return the id number 
 /// of the new instance.
 
-	$wwmoodle_set->timemodified = time();
 
-	# May have to add extra stuff in here #
+    $aSetInfo = wwmoodleset_getSetInfo($wwmoodleset->set_id, wwmoodleset_courseIdToShortName($wwmoodleset->course));
+    
+	$wwmoodleset->timemodified = time();
+	$wwmoodleset->id = $wwmoodleset->instance;
+	$wwmoodleset->timedue = $aSetInfo['due_date'];
+	$wwmoodleset->timeavailable = $aSetInfo['open_date'];
+    error_log("description".$wwmoodleset->description);
+	if ($returnid = insert_record("wwmoodleset", $wwmoodleset)) {
+		if ($wwmoodleset->timedue) {
+			$event = NULL;
+			$event->name        = $wwmoodleset->name;
+			$event->description = $wwmoodleset->description;
+			$event->courseid    = $wwmoodleset->course;
+			$event->groupid     = 0;
+			$event->userid      = 0;
+			$event->modulename  = 'wwmoodleset';
+			$event->instance    = $returnid;
+			$event->eventtype   = 'due';
+			$event->timestart   = $wwmoodleset->timedue;
+			$event->timeduration = 0;
+			if (! add_event($event) ){ 
+			 	error_log("wwmoodleset event not created when adding instance!");
+			}
+		}
+	}
 
-	return insert_record("wwmoodle_set", $wwmoodle_set);
+	return $returnid;
 }
 
 
-function wwmoodle_set_update_instance($wwmoodle_set) {
+function wwmoodleset_update_instance($wwmoodleset) {
 /// Given an object containing all the necessary data, 
 /// (defined by the form in mod.html) this function 
 /// will update an existing instance with new data.
+    $aSetInfo = wwmoodleset_getSetInfo($wwmoodleset->set_id, wwmoodleset_courseIdToShortName($wwmoodleset->course));
 
-	$wwmoodle_set->timemodified = time();
-	$wwmoodle_set->id = $wwmoodle_set->instance;
+	$wwmoodleset->timemodified = time();
+	$wwmoodleset->id = $wwmoodleset->instance;
+	$wwmoodleset->timedue = $aSetInfo['due_date'];
+	$wwmoodleset->timeavailable = $aSetInfo['open_date'];
 
-	# May have to add extra stuff in here #
+	if ($returnid = insert_record("wwmoodleset", $wwmoodleset)) {
+		if ($wwmoodleset->timedue) {
+			$event = NULL;
+	
+			if ($event->id = get_field('event', 'id', 'modulename', 'wwmoodleset', 'instance', $wwmoodleset->id)) {
+	
+				$event->name        = $wwmoodleset->name;
+				$event->description = $wwmoodleset->description || "";
+				$event->timestart   = $wwmoodleset->timedue;
+				
+				$rs = update_event($event) ;
+				error_log("updating the event".$rs);
+	
+			} else {
+				$event = NULL;
+				$event->name        = $wwmoodleset->name;
+				$event->description = $wwmoodleset->description;
+				$event->courseid    = $wwmoodleset->course;
+				$event->groupid     = 0;
+				$event->userid      = 0;
+				$event->modulename  = 'wwmoodleset';
+				$event->instance    = $wwmoodleset->id;
+				$event->eventtype   = 'due';
+				$event->timestart   = $wwmoodleset->timedue;
+				$event->timeduration = 0;
+				add_event($event);
+			}
+		} else {
+			delete_records('event', 'modulename', 'wwmoodleset', 'instance', $wwmoodleset->id);
+		}
+		return $returnid;
+	}
 
-	return update_record("wwmoodle_set", $wwmoodle_set);
 }
-
-
-function wwmoodle_set_delete_instance($id) {
+function wwmoodleset_delete_instance($id) {
 /// Given an ID of an instance of this module, 
 /// this function will permanently delete the instance 
 /// and any data that depends on it.  
-
-	if (! $wwmoodle_set = get_record("wwmoodle_set", "id", "$id")) {
+    $result = true;
+	if (! $wwmoodleset = get_record("wwmoodleset", "id", "$id")) {
 		return false;
 	}
 
-	$result = true;
-
 	# Delete any dependent records here #
 
-	if (! delete_records("wwmoodle_set", "id", "$wwmoodle_set->id")) {
+	if (! delete_records("wwmoodleset", "id", $wwmoodleset->id)) {
 		$result = false;
+	}
+
+	if (! delete_records('event', 'modulename', 'wwmoodleset', 'instance', $wwmoodleset->id)) {
+		$result = false;
+	}
+	
+	// Get the cm id to properly clean up the grade_items for this assignment
+	// bug 4976
+	if (! $cm = get_record('modules', 'name', 'wwmoodleset')) {
+		$result = false;
+	} else {
+		if (! delete_records('grade_item', 'modid', $cm->id, 'cminstance', $wwmoodleset->id)) {
+			$result = false;
+		}
 	}
 
 	return $result;
 }
 
-function wwmoodle_set_user_outline($course, $user, $mod, $wwmoodle_set) {
+function wwmoodleset_user_outline($course, $user, $mod, $wwmoodleset) {
 /// Return a small object with summary information about what a 
 /// user has done with a given particular instance of this module
 /// Used for user activity reports.
 /// $return->time = the time they did it
 /// $return->info = a short text description
-	$aLogs = get_logs("l.userid=$user AND l.course=$course AND l.cmid={$wwmoodle_set->id}");
+	$aLogs = get_logs("l.userid=$user AND l.course=$course AND l.cmid={$wwmoodleset->id}");
 	if( count($aLogs) > 0 ) {
 		$return->time = $aLogs[0]->time;
 		$return->info = $aLogs[0]->info;
@@ -253,16 +363,16 @@ function wwmoodle_set_user_outline($course, $user, $mod, $wwmoodle_set) {
 	return $return;
 }
 
-function wwmoodle_set_user_complete($course, $user, $mod, $wwmoodle_set) {
+function wwmoodleset_user_complete($course, $user, $mod, $wwmoodleset) {
 /// Print a detailed representation of what a  user has done with 
 /// a given particular instance of this module, for user activity reports.
 	
 	return true;
 }
 
-function wwmoodle_set_print_recent_activity($course, $isteacher, $timestart) {
+function wwmoodleset_print_recent_activity($course, $isteacher, $timestart) {
 /// Given a course and a time, this module should find recent activity 
-/// that has occurred in wwmoodle_set activities and print it out. 
+/// that has occurred in wwmoodleset activities and print it out. 
 /// Return true if there was output, or false is there was none.
 
 		global $CFG;
@@ -270,7 +380,7 @@ function wwmoodle_set_print_recent_activity($course, $isteacher, $timestart) {
 		return false;  //  True if anything was printed, otherwise false 
 }
 
-function wwmoodle_set_cron () {
+function wwmoodleset_cron () {
 /// Function to be run periodically according to the moodle cron
 /// This function searches for things that need to be done, such 
 /// as sending out mail, toggling flags etc ... 
@@ -280,7 +390,7 @@ function wwmoodle_set_cron () {
 		return true;
 }
 
-function wwmoodle_set_grades($wwmoodle_setid) {
+function wwmoodleset_grades($wwmoodlesetid) {
 /// Must return an array of grades for a given instance of this module, 
 /// indexed by user.  It also returns a maximum allowed grade.
 ///
@@ -301,56 +411,58 @@ function wwmoodle_set_grades($wwmoodle_setid) {
 	// again with a max of P
 	
 	// redefine it here, 'cause for some reason we can't global it...
-	$wwmoodle_set_gradeMethods = wwmoodle_set_gradeMethods();
+    debug_log("start grades");
+	$wwmoodleset_gradeMethods = wwmoodleset_gradeMethods();
 	
 	$oGrades->grades = array();
 	$aGrades->maxgrade = 0;
-	$oMod = get_record("wwmoodle_set", "id", $wwmoodle_setid);
+	
+	$oMod = get_record("wwmoodleset", "id", $wwmoodlesetid);
 	if( ! $oMod ) {
 		return NULL;
 	}
-	$gradeFormula = $wwmoodle_set_gradeMethods[$oMod->grade_method]['formula'];
+	$gradeFormula = $wwmoodleset_gradeMethods[$oMod->grade_method]['formula'];
 	if( empty($gradeFormula) ) {
 		return NULL;
 	}
 	
-	$sCourseName = wwmoodle_set_courseIdToShortName($oMod->course);
+	$sCourseName = wwmoodleset_courseIdToShortName($oMod->course);
 	
 	// enumerate over the students in the course:
 	$aStudents = get_course_students($oMod->course);
-	foreach( $aStudents as $s ) {
-		$aProblems = wwmoodle_set_getProblemsForUser($s->username, $oMod->set_id, $sCourseName);
-		$fGrade = 0.0;
+ 	foreach( $aStudents as $s ) {
+ 		$aProblems = _wwrpc_getProblemsForUser($s->username, $oMod->set_id, $sCourseName);
+ 		$fGrade = 0.0;
 		foreach( $aProblems as $p ) {
 			eval($gradeFormula);
 		}
 		$oGrades->grades[$s->id] = $fGrade;
-	}
-	$oGrades->maxgrade = wwmoodle_set_getMaxSetGrade($oMod->set_id, $sCourseName);
+ 	}
+	$oGrades->maxgrade = wwmoodleset_getMaxSetGrade($oMod->set_id, $sCourseName);
 	return $oGrades;
 }
 
-function wwmoodle_set_get_participants($wwmoodle_setid) {
+function wwmoodleset_get_participants($wwmoodlesetid) {
 //Must return an array of user records (all data) who are participants
-//for a given instance of wwmoodle_set. Must include every user involved
+//for a given instance of wwmoodleset. Must include every user involved
 //in the instance, independient of his role (student, teacher, admin...)
 //See other modules as example.
-	$oMod = get_record("wwmoodle_set", "id", $wwmoodle_setid);
+	$oMod = get_record("wwmoodleset", "id", $wwmoodlesetid);
 	if( ! $oMod ) {
 		return array();
 	}
 	return get_course_users($oMod->course);
 }
 
-function wwmoodle_set_scale_used ($wwmoodle_setid,$scaleid) {
-//This function returns if a scale is being used by one wwmoodle_set
+function wwmoodleset_scale_used ($wwmoodlesetid,$scaleid) {
+//This function returns if a scale is being used by one wwmoodleset
 //it it has support for grading and scales. Commented code should be
 //modified if necessary. See forum, glossary or journal modules
 //as reference.
 	 
 	$return = false;
 
-	$rec = get_record("wwmoodle_set","id","$wwmoodle_setid","scale","-$scaleid");
+	$rec = get_record("wwmoodleset","id","$wwmoodlesetid","scale","-$scaleid");
 	
 	if (!empty($rec)  && !empty($scaleid)) {
 		$return = true;
@@ -359,8 +471,45 @@ function wwmoodle_set_scale_used ($wwmoodle_setid,$scaleid) {
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
-/// Any other wwmoodle_set functions go here.  Each of them must have a name that 
-/// starts with wwmoodle_set_
+/// Any other wwmoodleset functions go here.  Each of them must have a name that 
+/// starts with wwmoodleset_
 
+function wwmoodleset_refresh_events($courseid = 0) {
+    error_log("wwmoodleset_refresh_events called");
+    if ($courseid == 0) {
+        if (! $wwmoodleset = get_records("wwmoodleset")) {
+            return true;
+        }
+    } else {
+        if (! $wwmoodleset = get_records("wwmoodleset", "course", $courseid)) {
+            return true;
+        }
+    }
+    $moduleid = get_field('modules', 'id', 'name', 'wwmoodleset');
+
+    foreach ($wwmoodleset as $wwmoodleset) {
+        $event = NULL;
+        $event->name        = addslashes($wwmoodleset->name);
+        $event->description = addslashes($wwmoodleset->description);
+        $event->timestart   = $wwmoodleset->timedue;
+
+        if ($event->id = get_field('event', 'id', 'modulename', 'wwmoodleset', 'instance', $wwmoodleset->id)) {
+            update_event($event);
+
+        } else {
+            $event->courseid    = $wwmoodleset->course;
+            $event->groupid     = 0;
+            $event->userid      = 0;
+            $event->modulename  = 'wwmoodleset';
+            $event->instance    = $wwmoodleset->id;
+            $event->eventtype   = 'due';
+            $event->timeduration = 0;
+            $event->visible     = get_field('course_modules', 'visible', 'module', $moduleid, 'instance', $wwmoodleset->id);
+            add_event($event);
+        }
+
+    }
+    return true;
+}
 
 ?>

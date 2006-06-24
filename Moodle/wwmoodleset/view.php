@@ -1,14 +1,14 @@
 <?php
-// $Id: view.php,v 1.1 2006-06-24 01:34:47 sh002i Exp $
+// $Id: view.php,v 1.2 2006-06-24 01:47:01 sh002i Exp $
 
-/// This page prints a particular instance of wwmoodle_set
-/// (Replace wwmoodle_set with the name of your module)
+/// This page prints a particular instance of wwmoodleset
+/// (Replace wwmoodleset with the name of your module)
 
 require_once("../../config.php");
 require_once("lib.php");
 
-optional_variable($id);    // Course Module ID, or
-optional_variable($a);     // wwmoodle_set ID
+    $id = optional_param('id', 0, PARAM_INT); // Course Module ID, or
+    $a  = optional_param('a', 0, PARAM_INT);  // NEWMODULE ID
 
 if ($id) {
 	if (! $cm = get_record("course_modules", "id", $id)) {
@@ -19,24 +19,24 @@ if ($id) {
 		error("Course is misconfigured");
 	}
 	
-	if (! $wwmoodle_set = get_record("wwmoodle_set", "id", $cm->instance)) {
+	if (! $wwmoodleset = get_record("wwmoodleset", "id", $cm->instance)) {
 		error("Course module is incorrect");
 	}
 } else {
-	if (! $wwmoodle_set = get_record("wwmoodle_set", "id", $a)) {
+	if (! $wwmoodleset = get_record("wwmoodleset", "id", $a)) {
 		error("Course module is incorrect");
 	}
-	if (! $course = get_record("course", "id", $wwmoodle_set->course)) {
+	if (! $course = get_record("course", "id", $wwmoodleset->course)) {
 		error("Course is misconfigured");
 	}
-	if (! $cm = get_coursemodule_from_instance("wwmoodle_set", $wwmoodle_set->id, $course->id)) {
+	if (! $cm = get_coursemodule_from_instance("wwmoodleset", $wwmoodleset->id, $course->id)) {
 		error("Course Module ID was incorrect");
 	}
 }
 
 require_login($course->id);
 
-add_to_log($course->id, "wwmoodle_set", "view", "view.php?id=$cm->id", "$wwmoodle_set->id");
+add_to_log($course->id, "wwmoodleset", "view", "view.php?id=$cm->id", "$wwmoodleset->id");
 
 /// Print the page header
 
@@ -44,16 +44,16 @@ if ($course->category) {
 	$navigation = "<a href=\"../../course/view.php?id=$course->id\">$course->shortname</a> ->";
 }
 
-$strwwmoodle_sets = get_string("modulenameplural", "wwmoodle_set");
-$strwwmoodle_set  = get_string("modulename", "wwmoodle_set");
+$strwwmoodlesets = get_string("modulenameplural", "wwmoodleset");
+$strwwmoodleset  = get_string("modulename", "wwmoodleset");
 
-print_header("$course->shortname: $wwmoodle_set->name", "$course->fullname", "$navigation <a href='index.php?id=$course->id'>$strwwmoodle_sets</a> -> $wwmoodle_set->name", "", "", true, update_module_button($cm->id, $course->id, $strwwmoodle_set), navmenu($course, $cm));
+print_header("$course->shortname: $wwmoodleset->name", "$course->fullname", "$navigation <a href='index.php?id=$course->id'>$strwwmoodlesets</a> -> $wwmoodleset->name", "", "", true, update_module_button($cm->id, $course->id, $strwwmoodleset), navmenu($course, $cm));
 
 /// Print the main part of the page
 
-$sSetLink = wwmoodle_set_linkToSet($wwmoodle_set->set_id, wwmoodle_set_courseIdToShortName($wwmoodle_set->course));
-print("<p style='font-size: smaller; color: #aaa;'>" . get_string("iframeNoShow-1", "wwmoodle_set") . "<a href='$sSetLink'>" . get_string("iframeNoShow-2", "wwmoodle_set") . "</a>.</p>\n");
-print("<iframe src='$sSetLink' align='center' width='".$CFG->wwmoodle_set_iframe_width."' height='".$CFG->wwmoodle_set_iframe_height."'>" . get_string("iframeNoShow-1", "wwmoodle_set") . "<a href='$sSetLink'>" . get_string("iframeNoShow-2", "wwmoodle_set") . "</a>.</iframe>\n");
+$sSetLink = wwmoodleset_linkToSet($wwmoodleset->set_id, wwmoodleset_courseIdToShortName($wwmoodleset->course));
+print("<p style='font-size: smaller; color: #aaa;'>" . get_string("iframeNoShow-1", "wwmoodleset") . "<a href='$sSetLink'>" . get_string("iframeNoShow-2", "wwmoodleset") . "</a>.</p>\n");
+print("<iframe src='$sSetLink' align='center' width='".$CFG->wwmoodleset_iframe_width."' height='".$CFG->wwmoodleset_iframe_height."'>" . get_string("iframeNoShow-1", "wwmoodleset") . "<a href='$sSetLink'>" . get_string("iframeNoShow-2", "wwmoodleset") . "</a>.</iframe>\n");
 
 /// Finish the page
 print_footer($course);

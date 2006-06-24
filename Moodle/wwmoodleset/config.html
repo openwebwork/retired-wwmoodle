@@ -1,13 +1,13 @@
 <?php
 // $Id$
-	if( empty($CFG->wwmoodle_set_webwork_url) ) {
-		$CFG->wwmoodle_set_webwork_url = "/webwork2";
+	if( empty($CFG->wwmoodleset_webwork_url) ) {
+		$CFG->wwmoodleset_webwork_url = "/webwork2";
 	}
-	if( empty($CFG->wwmoodle_set_iframe_width) ) {
-		$CFG->wwmoodle_set_iframe_width = "95%";
+	if( empty($CFG->wwmoodleset_iframe_width) ) {
+		$CFG->wwmoodleset_iframe_width = "95%";
 	}
-	if( empty($CFG->wwmoodle_set_iframe_height) ) {
-		$CFG->wwmoodle_set_iframe_height = "500px";
+	if( empty($CFG->wwmoodleset_iframe_height) ) {
+		$CFG->wwmoodleset_iframe_height = "500px";
 	}
 ?>
 
@@ -15,19 +15,19 @@
 	<input type="hidden" name="sesskey" value="<?php echo $USER->sesskey ?>">
 	<table cellpadding="9" cellspacing="0" >
 		<tr valign='top'>
-			<td align="right"><label for='wwmoodle_set_webwork_url'><b>wwmoodle_set_webwork_url:</b></label></td>
-			<td><input type='text' name='wwmoodle_set_webwork_url' id='wwmoodle_set_webwork_url' value="<?php p($CFG->wwmoodle_set_webwork_url); ?>" /></td>
-			<td><?php print_string('webwork_url', 'wwmoodle_set'); ?></td>
+			<td align="right"><label for='wwmoodleset_webwork_url'><b>wwmoodleset_webwork_url:</b></label></td>
+			<td><input type='text' name='wwmoodleset_webwork_url' id='wwmoodleset_webwork_url' value="<?php p($CFG->wwmoodleset_webwork_url); ?>" /></td>
+			<td><?php print_string('webwork_url', 'wwmoodleset'); ?></td>
 		</tr>
 		<tr valign='top'>
-			<td align='right'><label for='wwmoodle_set_iframe_width'><b>wwmoodle_set_iframe_width:</b></label></td>
-			<td><input type='text' name='wwmoodle_set_iframe_width' id='wwmoodle_set_iframe_width' value="<?php p($CFG->wwmoodle_set_iframe_width); ?>" /></td>
-			<td><?php print_string('iframe_width', 'wwmoodle_set'); ?></td>
+			<td align='right'><label for='wwmoodleset_iframe_width'><b>wwmoodleset_iframe_width:</b></label></td>
+			<td><input type='text' name='wwmoodleset_iframe_width' id='wwmoodleset_iframe_width' value="<?php p($CFG->wwmoodleset_iframe_width); ?>" /></td>
+			<td><?php print_string('iframe_width', 'wwmoodleset'); ?></td>
 		</tr>
 		<tr valign='top'>
-			<td align='right'><label for='wwmoodle_set_iframe_height'><b>wwmoodle_set_iframe_height:</b></label></td>
-			<td><input type='text' name='wwmoodle_set_iframe_height' id='wwmoodle_set_iframe_height' value="<?php p($CFG->wwmoodle_set_iframe_height); ?>" /></td>
-			<td><?php print_string('iframe_height', 'wwmoodle_set'); ?></td>
+			<td align='right'><label for='wwmoodleset_iframe_height'><b>wwmoodleset_iframe_height:</b></label></td>
+			<td><input type='text' name='wwmoodleset_iframe_height' id='wwmoodleset_iframe_height' value="<?php p($CFG->wwmoodleset_iframe_height); ?>" /></td>
+			<td><?php print_string('iframe_height', 'wwmoodleset'); ?></td>
 		</tr>
 		<tr>
 			<td colspan="3" align="center"><input type="submit" value="<?php print_string("savechanges") ?>" /></td>

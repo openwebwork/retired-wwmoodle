@@ -1,5 +1,5 @@
 <?php
-// $Id: version.php,v 1.1.1.1 2006-06-17 21:45:25 sh002i Exp $
+// $Id: version.php,v 1.2 2006-06-24 01:46:57 sh002i Exp $
 
 /////////////////////////////////////////////////////////////////////////////////
 ///  Code fragment to define the version of wwmoodle

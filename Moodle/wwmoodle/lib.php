@@ -1,6 +1,15 @@
 <?php 
-// $Id: lib.php,v 1.1.1.1 2006-06-17 21:45:25 sh002i Exp $
-require_once("DB.php");
+// $Id: lib.php,v 1.2 2006-06-24 01:46:57 sh002i Exp $
+
+//MEG
+#$path = ini_get('include_path');
+#ini_set('include_path', $path . ':/usr/local/lib/php/pear/DB');
+
+#require_once("PEAR.php");
+//require_once("DB.php");
+//endMEG
+
+
 
 /// Library of functions and constants for module NEWMODULE
 /// (replace NEWMODULE with the name of your module and delete this line)
@@ -122,31 +131,35 @@ function wwmoodle_configureCourse($sCourseName, $sAllowedRecipients) {
  * @return mixed In the event of an error, a human readable string is returned. Otherwise true is returned.
  */
 function wwmoodle_createCourseTables($sCourseName) {
-	$db =& DB::connect(WWMOODLE_WEBWORK_DB);
-	if( DB::isError($db) ) {
-		return "Failed to connect to database.";
-	}
+    global $db;
+	//$db =& DB::connect(WWMOODLE_WEBWORK_DB);
+// 	if( DB::isError($db) ) {
+// 		return "Failed to connect to database.";
+// 	}
 	$sKey = "CREATE TABLE `{$sCourseName}_key` (`user_id` text, `key_not_a_keyword` text, `timestamp` text, KEY `user_id` (`user_id`(16)))";
 	$sProblem = "CREATE TABLE `{$sCourseName}_problem` (`set_id` text, `problem_id` text, `source_file` text, `value` text, `max_attempts` text, KEY `set_id` (`set_id`(16),`problem_id`(16)), KEY `problem_id` (`problem_id`(16)))";
 	$sProblemUser = "CREATE TABLE `{$sCourseName}_problem_user` (`user_id` text, `set_id` text, `problem_id` text, `source_file` text, `value` text, `max_attempts` text, `problem_seed` text, `status` text, `attempted` text, `last_answer` text, `num_correct` text, `num_incorrect` text, KEY `user_id` (`user_id`(16),`set_id`(16),`problem_id`(16)), KEY `set_id` (`set_id`(16),`problem_id`(16)), KEY `problem_id` (`problem_id`(16)))";
-	$sSet = "CREATE TABLE `{$sCourseName}_set` (`set_id` text, `set_header` text, `hardcopy_header` text, `open_date` text, `due_date` text, `answer_date` text, `published` text, KEY `set_id` (`set_id`(16)))";
-	$sSetUser = "CREATE TABLE `{$sCourseName}_set_user` (`user_id` text, `set_id` text, `psvn` int(11) NOT NULL auto_increment, `set_header` text, `hardcopy_header` text, `open_date` text, `due_date` text, `answer_date` text, `published` text, PRIMARY KEY  (`psvn`), KEY `user_id` (`user_id`(16),`set_id`(16)), KEY `set_id` (`set_id`(16)))";
-	if( DB::isError($db->query($sKey)) ) {
-		return "Failed to create table {$sCourseName}_key!";
+	//$sSet = "CREATE TABLE `{$sCourseName}_set` (`set_id` text, `set_header` text, `hardcopy_header` text, `open_date` text, `due_date` text, `answer_date` text, `published` text, KEY `set_id` (`set_id`(16)))";
+	$sSet = "CREATE TABLE `{$sCourseName}_set` (`set_id` text, `set_header` text, `hardcopy_header` text, `open_date` text, `due_date` text, `answer_date` text, `published` text, `assignment_type` text, `attempts_per_version` int(11), `time_interval` int(11), `versions_per_interval` int(11), `version_time_limit` int(11), `version_creation_time` bigint(20), `problem_randorder` int(11), `version_last_attempt_time` bigint(20), KEY `set_id` (`set_id`(16)))";
+	
+	$sSetUser = "CREATE TABLE `{$sCourseName}_set_user` (`user_id` text, `set_id` text, `psvn` int(11) NOT NULL auto_increment, `set_header` text, `hardcopy_header` text, `open_date` text, `due_date` text, `answer_date` text, `published` text, `assignment_type` text, `attempts_per_version` int(11), `time_interval` int(11), `versions_per_interval` int(11), `version_time_limit` int(11), `version_creation_time` bigint(20), `problem_randorder` int(11), `version_last_attempt_time` bigint(20), PRIMARY KEY  (`psvn`), KEY `user_id` (`user_id`(16),`set_id`(16)), KEY `set_id` (`set_id`(16)))";
+	if( $db->ErrorNo($db->query($sKey)) ) {
+		return $db->ErrorMsg()." Failed to create table {$sCourseName}_key!";
 	}
-	if( DB::isError($db->query($sProblem)) ) {
-		return "Failed to create table {$sCourseName}_problem!";
+	if( $db->ErrorNo($db->query($sProblem)) ) {
+		return $db->ErrorMsg()." Failed to create table {$sCourseName}_problem!";
 	}
-	if( DB::isError($db->query($sProblemUser)) ) {
-		return "Failed to create table {$sCourseName}_problem_user!";
+	if( $db->ErrorNo($db->query($sProblemUser)) ) {
+		return $db->ErrorMsg()." Failed to create table {$sCourseName}_problem_user!";
 	}
-	if( DB::isError($db->query($sSet)) ) {
-		return "Failed to create table {$sCourseName}_set!";
+	if( $db->ErrorNo($db->query($sSet)) ) {
+		return $db->ErrorMsg()." Failed to create table {$sCourseName}_set!";
 	}
-	if( DB::isError($db->query($sSetUser)) ) {
-		return "Failed to create table {$sCourseName}_set_user!";
+	if( $db->ErrorNo($db->query($sSetUser)) ) {
+		return $db->ErrorMsg()." Failed to create table {$sCourseName}_set_user!";
 	}
-	$db->disconnect();
+
+	//$db->disconnect();
 	return true;
 }
 
@@ -157,31 +170,29 @@ function wwmoodle_createCourseTables($sCourseName) {
  * @param string $sCourseName The name of the course to delete.
  */
 function wwmoodle_deleteCourse($sCourseName) {
-	$db =& DB::connect(WWMOODLE_WEBWORK_DB);
-	if( DB::isError($db) ) {
-		return "Failed to connect to database.";
-	}
+	global $db;
+
 	$sKey = "DROP TABLE `${sCourseName}_key`";
 	$sProblem = "DROP TABLE `${sCourseName}_problem`";
 	$sProblemUser = "DROP TABLE `${sCourseName}_problem_user`";
 	$sSet = "DROP TABLE `${sCourseName}_set`";
 	$sSetUser = "DROP TABLE `${sSetUser}_set_user`";
-	if( DB::isError($db->query($sKey)) ) {
+	if( $db->ErrorNo($db->query($sKey)) ) {
 		return "Failed to drop table ${sCourseName}_key";
 	}
-	if( DB::isError($db->query($sProblem)) ) {
-		return "Failed to drop table ${sCourseName}_problem";
+	if( $db->ErrorNo($db->query($sProblem)) ) {
+		return $db->ErrorMsg()." Failed to drop table ${sCourseName}_problem";
 	}
-	if( DB::isError($db->query($sProblemUser)) ) {
-		return "Failed to drop table ${sCourseName}_problem_user";
+	if($db->ErrorNo($db->query($sProblemUser)) ) {
+		return $db->ErrorMsg()." Failed to drop table ${sCourseName}_problem_user";
 	}
-	if( DB::isError($db->query($sSet)) ) {
-		return "Failed to drop table ${sCourseName}_set";
+	if( $db->ErrorNo($db->query($sSet)) ) {
+		return $db->ErrorMsg()." Failed to drop table ${sCourseName}_set";
 	}
-	if( DB::isError($db->query($sSetUser)) ) {
-		return "Failed to drop table ${sCourseName}_set_user";
+	if( $db->ErrorNo($db->query($sSetUser)) ) {
+		return $db->ErrorMsg()." Failed to drop table ${sCourseName}_set_user";
 	}
-	$db->disconnect();
+	//$db->disconnect();
 	// now kill the directory:
 	wwmoodle_rmdirr(WWMOODLE_WEBWORK_COURSES.$sCourseName);
 	return true;
@@ -234,10 +245,36 @@ function wwmoodle_add_instance($wwmoodle) {
 	}
 	
 	$wwmoodle->timemodified = time();
+	//FIXME
+	// If the subroutine wwmoodle_createCourseTables is run
+	// then the call to insert_record results in an error
+	// the routine _add... in adodb-lib.inc.php fails to find
+	// the number of columns in the table. 
+	// also the moodle course can't be found
+	// if the subroutine is not called then insert_record works
+	// what is it about wwmoodle_createCourseTables that appears to interfere
+	// with insert_record
+	//MEG
+	
+	$wwmoodle->coursename = wwmoodle_courseIdToShortName($wwmoodle->course);
+	if (! isset($wwmoodle->coursename) ){
+	     $wwmoodle->coursename = "foo";
+	}
+	$result = insert_record("wwmoodle",$wwmoodle);
+	$fh = fopen("/home/gage/moodle_debug", "w");
+	fwrite($fh,  "wwmoodle structure1\n");
+	$struct = print_r($wwmoodle, true);
+	fwrite($fh, $struct);
+	fwrite($fh, "\nresult is ");
+	fwrite($fh, $result);
+	fwrite($fh, "\n");
+	fclose($fh);
+	//MEG
 		
 	// create the course in WeBWorK if desired:
 	if( $wwmoodle->createWWc ) {
 		$courseName = wwmoodle_courseIdToShortName($wwmoodle->course);
+
 		$mRes = wwmoodle_createCourseDirs($courseName);
 		if( is_string($mRes) ) {
 			error($mRes);
@@ -250,8 +287,10 @@ function wwmoodle_add_instance($wwmoodle) {
 		if( is_string($mRes) ) {
 			error($mRes);
 		}
+
 	}
-	return insert_record("wwmoodle", $wwmoodle);
+
+	return $result;
 }
 
 

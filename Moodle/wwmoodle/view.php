@@ -1,5 +1,5 @@
 <?php
-// $Id: view.php,v 1.1.1.1 2006-06-17 21:45:25 sh002i Exp $
+// $Id: view.php,v 1.2 2006-06-24 01:46:57 sh002i Exp $
 
 /// This page prints a particular instance of NEWMODULE
 /// (Replace NEWMODULE with the name of your module)
@@ -7,8 +7,8 @@
 require_once("../../config.php");
 require_once("lib.php");
 
-optional_variable($id);    // Course Module ID, or
-optional_variable($a);     // NEWMODULE ID
+    $id = optional_param('id', 0, PARAM_INT); // Course Module ID, or
+    $a  = optional_param('a', 0, PARAM_INT);  // NEWMODULE ID
 
 if ($id) {
 	if (! $cm = get_record("course_modules", "id", $id)) {
@@ -50,7 +50,10 @@ print_header("$course->shortname: $wwmoodle->name", "$course->fullname", "$navig
 
 /// Print the main part of the page
 if( isteacher($course->id) ) {
-	print("<p style='font-size: smaller; color: #aaa; text-align: center;'><a style='color: #aaa;' href='".WWMOODLE_WEBWORK_URL."/$course->shortname'>".get_string("goToWeBWorK", "wwmoodle")."</a></p>");
+	print("<p style='font-size: smaller; color: #aaa; text-align: center;'><a style='color: #666;text-decoration:underline' href='".WWMOODLE_WEBWORK_URL."/$course->shortname'>".get_string("goToWeBWorK", "wwmoodle")."</a></p>");
+}
+if( isadmin() ) {
+	print("<p style='font-size: smaller; color: #aaa; text-align: center;'><a style='color: #666;text-decoration:underline' href='".WWMOODLE_WEBWORK_URL."/admin'>"."Create Course"."</a></p>");
 }
 // TODO: Ensure table is printed with style consistant with rest of moodle
 print("<table id='setList'>\n");

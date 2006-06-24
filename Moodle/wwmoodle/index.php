@@ -1,5 +1,5 @@
 <?php
-// $Id: index.php,v 1.1.1.1 2006-06-17 21:45:25 sh002i Exp $
+// $Id: index.php,v 1.2 2006-06-24 01:46:57 sh002i Exp $
 
 /// This page lists all the instances of NEWMODULE in a particular course
 /// Replace NEWMODULE with the name of your module
@@ -7,7 +7,7 @@
 require_once("../../config.php");
 require_once("lib.php");
 
-require_variable($id);   // course
+$id = required_param('id', PARAM_INT);   // course
 
 if (! $course = get_record("course", "id", $id)) {
 	error("Course ID is incorrect");
