@@ -1,5 +1,5 @@
 <?php
-// $Id: lib.php,v 1.2 2006-06-24 01:47:01 sh002i Exp $
+// $Id: lib.php,v 1.3 2006-06-24 13:57:05 gage Exp $
 //require_once("DB.php");
 function debug_log($obj) {
 	$fh = fopen("/home/gage/moodle_debug", "w");
@@ -70,7 +70,7 @@ function wwmoodleset_printGradeMethodSelect($iGradeMethod='-1') {
  * @param string $sCourseName The name of this course.
  * @return int
  */
-function wwmoodleset_getMaxSetGrade($iSetId, $sCourseName) {
+function _wwrpc_getMaxSetGrade($iSetId, $sCourseName) {
 	global $db, $CFG;
     if (!$res = $db->Execute($sql)) {
         if (isset($CFG->debug) and $CFG->debug > 7) {
@@ -157,7 +157,7 @@ function wwmoodleset_courseIdToShortName($iCourseId) {
  * @param $sCourseName The name of this course
  * @return array Information about the set.
  */
-function wwmoodleset_getSetInfo($iSetId, $sCourseName) {
+function _wwrpc_getSetInfo($iSetId, $sCourseName) {
 	global $db, $CFG;
 	$qry = "SELECT * FROM ". WW_TABLE_PREFIX.".{$sCourseName}_set WHERE set_id=?";
     //error_log("get info for set $iSetID and $sCourseName");
@@ -242,7 +242,7 @@ function wwmoodleset_add_instance($wwmoodleset) {
 /// of the new instance.
 
 
-    $aSetInfo = wwmoodleset_getSetInfo($wwmoodleset->set_id, wwmoodleset_courseIdToShortName($wwmoodleset->course));
+    $aSetInfo = _wwrpc_getSetInfo($wwmoodleset->set_id, wwmoodleset_courseIdToShortName($wwmoodleset->course));
     
 	$wwmoodleset->timemodified = time();
 	$wwmoodleset->id = $wwmoodleset->instance;
@@ -276,7 +276,7 @@ function wwmoodleset_update_instance($wwmoodleset) {
 /// Given an object containing all the necessary data, 
 /// (defined by the form in mod.html) this function 
 /// will update an existing instance with new data.
-    $aSetInfo = wwmoodleset_getSetInfo($wwmoodleset->set_id, wwmoodleset_courseIdToShortName($wwmoodleset->course));
+    $aSetInfo = _wwrpc_getSetInfo($wwmoodleset->set_id, wwmoodleset_courseIdToShortName($wwmoodleset->course));
 
 	$wwmoodleset->timemodified = time();
 	$wwmoodleset->id = $wwmoodleset->instance;
@@ -438,7 +438,7 @@ function wwmoodleset_grades($wwmoodlesetid) {
 		}
 		$oGrades->grades[$s->id] = $fGrade;
  	}
-	$oGrades->maxgrade = wwmoodleset_getMaxSetGrade($oMod->set_id, $sCourseName);
+	$oGrades->maxgrade = _wwrpc_getMaxSetGrade($oMod->set_id, $sCourseName);
 	return $oGrades;
 }
 

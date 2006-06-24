@@ -1,5 +1,5 @@
 <?php
-// $Id: index.php,v 1.2 2006-06-24 01:47:01 sh002i Exp $
+// $Id: index.php,v 1.3 2006-06-24 13:57:05 gage Exp $
 
 
 /// This page lists all the instances of wwmoodleset in a particular course
@@ -63,7 +63,7 @@ print_header("$course->shortname: $strwwmoodlesets", "$course->fullname", "$navi
     
     foreach ($wwmoodlesets as $wwmoodleset) {
         // grab specific info for this set:
-        $aSetInfo = wwmoodleset_getSetInfo($wwmoodleset->set_id, wwmoodleset_courseIdToShortName($course->id));
+        $aSetInfo = _wwrpc_getSetInfo($wwmoodleset->set_id, wwmoodleset_courseIdToShortName($course->id));
         if (!$wwmoodleset->visible) {
             //Show dimmed if the mod is hidden
             $link = "<a class=\"dimmed\" href=\"view.php?id=$wwmoodleset->coursemodule\">$wwmoodleset->name</a>";
