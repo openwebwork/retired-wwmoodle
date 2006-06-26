@@ -1,5 +1,5 @@
 <?php
-// $Id: view.php,v 1.2 2006-06-24 01:47:01 sh002i Exp $
+// $Id: view.php,v 1.3 2006-06-26 23:31:52 dpvc Exp $
 
 /// This page prints a particular instance of wwmoodleset
 /// (Replace wwmoodleset with the name of your module)
@@ -52,8 +52,16 @@ print_header("$course->shortname: $wwmoodleset->name", "$course->fullname", "$na
 /// Print the main part of the page
 
 $sSetLink = wwmoodleset_linkToSet($wwmoodleset->set_id, wwmoodleset_courseIdToShortName($wwmoodleset->course));
-print("<p style='font-size: smaller; color: #aaa;'>" . get_string("iframeNoShow-1", "wwmoodleset") . "<a href='$sSetLink'>" . get_string("iframeNoShow-2", "wwmoodleset") . "</a>.</p>\n");
-print("<iframe src='$sSetLink' align='center' width='".$CFG->wwmoodleset_iframe_width."' height='".$CFG->wwmoodleset_iframe_height."'>" . get_string("iframeNoShow-1", "wwmoodleset") . "<a href='$sSetLink'>" . get_string("iframeNoShow-2", "wwmoodleset") . "</a>.</iframe>\n");
+print("<p style='font-size: smaller; color: #aaa;'>" . get_string("iframeNoShow-1", "wwmoodleset")
+      . "<a href='$sSetLink'>" . get_string("iframeNoShow-2", "wwmoodleset") . "</a>.</p>\n");
+print("<p align='center'><iframe id='wwPage' src='$sSetLink' frameborder='1' "
+      . "width='".$CFG->wwmoodleset_iframe_width."' "
+      . "height='".$CFG->wwmoodleset_iframe_height."'>"
+      . get_string("iframeNoShow-1", "wwmoodleset") . "<a href='$sSetLink'>" . get_string("iframeNoShow-2", "wwmoodleset")
+      . "</a>.</iframe></p>\n");
+
+print("<script>ww.Init(".isteacher($course->id).")</script>");
+
 
 /// Finish the page
 print_footer($course);
