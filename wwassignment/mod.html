@@ -1,0 +1,159 @@
+<!-- This page defines the form to create or edit an instance of this module -->
+<!-- It is used from /course/mod.php.  The whole instance is available as $form. -->
+
+<?php
+
+// $Id$
+/// First we check that form variables have been initialised
+if (!isset($form->name)) {
+	$form->name = '';
+}
+if( !isset($form->intro) ) {
+	$form->intro = 'Introduction?? where is this used? defined in mod.html';
+}
+if( !isset($form->set_id) ) {
+	$form->set_id = -1;
+}
+if( ! isset($form->gradingmethod) ) {
+	$form->gradingmethod = 0;
+}
+//if( ! isset($form->course) ) {
+//	$form->course = $course->id;
+//}
+// this is really hacky, but I need the contents of the lib.php for wwassignment:
+	require_once("../mod/wwassignment/lib.php"); 
+	//require_once ("$CFG->dirroot/mod/wwassignmentlib.php");
+	define('WWMOODLE_SET_WEBWORK_URL', $CFG->wwassignment_webwork_url);
+    
+    require_login($course->id);
+    
+    add_to_log($course->id, "wwassignment", "view all", "index.php?id=$course->id", "");
+    $wwCourseName = wwmoodle_courseIdToShortName($course->id);
+  
+    
+/// Get all required strings
+
+    $strwwassignments = get_string("modulenameplural", "wwassignment");
+    $strwwassignment  = get_string("modulename", "wwassignment");
+
+?>
+<?php 
+// ensure that there is a bridge for this course:
+    error_log("form ");
+    error_log(print_r($form,true));
+	$oCourse = get_record("course", "id", $form->course);
+	error_log(print_r($oCourse, true));
+	$aMods = get_all_instances_in_course("wwmoodle", $oCourse);
+	error_log("aMods");
+	error_log(count($aMods));
+	error_log(print_r($aMods, true));
+?> 
+
+	
+	<form name="form" method="post" action="mod.php">
+	<center>
+	<table cellpadding="5">
+	<tr><td>
+<?php
+	 if (count($aMods) == 0) {
+		
+			print "This course will be connected to $wwCourseName";
+	        if (isadmin()) {
+	        	print("<p style='font-size: smaller; color: #aaa; text-align: center;'>
+		        <a style='color: black;text-decoration:underline' href='".WWMOODLE_WEBWORK_URL."/admin'>"."Link to create WeBWorK course"."</a></p>");
+	        
+	        }
+
+	 } else {
+	        print "This course is already prepared to connect to the webwork course $wwCourseName. ";
+	        if (isadmin()) {
+	        	print("<p style='font-size: smaller; color: #aaa; text-align: center;'>
+		        <a style='color: black;text-decoration:underline' href='".WWMOODLE_WEBWORK_URL."/admin'>"."Link to create WeBWorK course"."</a></p>");
+	        
+	        }
+	 
+	 
+	 
+	 }	
+?>
+	</td></tr>
+	<tr valign="top">
+		<td align="right"><label for='name'><b><?php  print_string("name") ?>:</b></label></td>
+		<td>
+			<input type="text" id='name' name="name" size="30" value="<?php  p($form->name) ?>">
+		</td>
+	</tr>
+	<!-- More rows go in here... -->
+	
+	<tr valign='top'>
+		<td align='right'><label for='set_id'><b><?php print_string("set_id", "wwassignment"); ?>:</b></label><br />
+			<?php helpbutton("set_id", get_string("helpSet_id", "wwassignment"), "wwassignment", true, true); ?>
+		</td>
+		<td align='left'><?php wwassignment_printSetSelect($form->course, $form->set_id); ?></td>
+	</tr>
+	<tr valign="top">
+		<td align="right"><b><?php print_string("description", "assignment") ?>:</b>
+		 <br /><br />
+		 <?php
+			helpbutton("writing", get_string("helpwriting"), "moodle", true, true);
+			echo "<br />";
+			helpbutton("questions", get_string("helpquestions"), "moodle", true, true);
+			echo "<br />";
+			if ($usehtmleditor) {
+			   helpbutton("richtext", get_string("helprichtext"), "moodle", true, true);
+			} else {
+			   emoticonhelpbutton("form", "description");
+			} 
+		  ?>
+		</td>
+		<td>
+		<?php
+		   print_textarea($usehtmleditor, 20, 60, 680, 400, "description", $form->description);
+		
+		   if ($usehtmleditor) {
+			   echo '<input type="hidden" name="format" value="'.FORMAT_HTML.'" />';
+		   } else {
+			   echo '<div align="right">';
+			   helpbutton("textformat", get_string("formattexttype"));
+			   print_string("formattexttype");
+			   echo ':&nbsp;';
+			   if (!$form->format) {
+				   $form->format = $defaultformat;
+			   }
+			   choose_from_menu(format_text_menu(), "format", $form->format, ""); 
+			   echo '</div>';
+		   }
+		?>
+		</td>
+	</tr>
+	<tr valign='top'>
+		<td align='right'><label for='gradeMethod'><b><?php print_string("gradeMethod", "wwassignment"); ?>:</b></label><br />
+			<?php helpbutton("gradeMethod", get_string("helpGradeMethod", "wwassignment"), "wwassignment", true, true); ?>
+		</td>
+		<td align='left'><?php wwassignment_printGradeMethodSelect($form->gradingmethod); ?></td>
+	</tr>
+	<!-- The following line for Moodle 1.5 prints the visibility setting form element -->
+	<?php print_visible_setting($form,$oCourse); // the version without $oCourse doesn't work, error in course/lib.php perhaps MEG?>
+	
+	</table>
+	<!-- These hidden variables are always the same -->
+	<input type="hidden" name='formaction'    value="create_assignment" />
+	<input type="hidden" name='course'        value="<?php  p($form->course) ?>" />
+	<input type="hidden" name="sesskey"       value="<?php  p($form->sesskey) ?>" />
+	<input type="hidden" name='coursemodule'  value="<?php  p($form->coursemodule) ?>" />
+	<input type="hidden" name='section'       value="<?php  p($form->section) ?>" />
+	<input type="hidden" name='module'        value="<?php  p($form->module) ?>" />
+	<input type="hidden" name='modulename'    value="<?php  p($form->modulename) ?>" />
+	<input type="hidden" name='instance'      value="<?php  p($form->instance) ?>" />
+	<input type="hidden" name='mode'          value="<?php  p($form->mode) ?>" />
+	<input type="submit" value="<?php  print_string("savechanges") ?>" />
+	</center>
+	
+	</form>
+	<?php
+		if( isteacher($course->id) ) {
+			print("<p style='font-size: smaller; color: #aaa; text-align: center;'>
+			 <a style='color: #666;text-decoration:underline' href='".WWMOODLE_SET_WEBWORK_URL."/$course->shortname/instructor' target='_webwork_edit'>"
+			 .get_string("goToWeBWorK", "wwmoodle")."</a></p>");
+		}
+	?>
