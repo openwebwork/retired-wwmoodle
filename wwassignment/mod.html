@@ -17,18 +17,16 @@ if( !isset($form->set_id) ) {
 if( ! isset($form->gradingmethod) ) {
 	$form->gradingmethod = 0;
 }
-//if( ! isset($form->course) ) {
-//	$form->course = $course->id;
-//}
+
 // this is really hacky, but I need the contents of the lib.php for wwassignment:
 	require_once("../mod/wwassignment/lib.php"); 
 	//require_once ("$CFG->dirroot/mod/wwassignmentlib.php");
-	define('WWMOODLE_SET_WEBWORK_URL', $CFG->wwassignment_webwork_url);
+	define('WWASSIGNMENT_WEBWORK_URL', $CFG->wwassignment_webworkurl);
     
     require_login($course->id);
     
     add_to_log($course->id, "wwassignment", "view all", "index.php?id=$course->id", "");
-    $wwCourseName = wwmoodle_courseIdToShortName($course->id);
+    $wwCourseName = _wwassignment_courseIdToShortName($course->id);
   
     
 /// Get all required strings
@@ -39,14 +37,14 @@ if( ! isset($form->gradingmethod) ) {
 ?>
 <?php 
 // ensure that there is a bridge for this course:
-    error_log("form ");
-    error_log(print_r($form,true));
-	$oCourse = get_record("course", "id", $form->course);
-	error_log(print_r($oCourse, true));
-	$aMods = get_all_instances_in_course("wwmoodle", $oCourse);
-	error_log("aMods");
-	error_log(count($aMods));
-	error_log(print_r($aMods, true));
+//    error_log("form ");
+//    error_log(print_r($form,true));
+// 	$oCourse = get_record("course", "id", $form->course);
+// 	error_log(print_r($oCourse->id, true));
+	$record = get_record("wwassignment_bridge", "course",$form->course);
+// 	error_log("aMods");
+// 	error_log(count($record));
+// 	error_log(print_r($record, true));
 ?> 
 
 	
@@ -55,26 +53,19 @@ if( ! isset($form->gradingmethod) ) {
 	<table cellpadding="5">
 	<tr><td>
 <?php
-	 if (count($aMods) == 0) {
-		
-			print "This course will be connected to $wwCourseName";
-	        if (isadmin()) {
-	        	print("<p style='font-size: smaller; color: #aaa; text-align: center;'>
-		        <a style='color: black;text-decoration:underline' href='".WWMOODLE_WEBWORK_URL."/admin'>"."Link to create WeBWorK course"."</a></p>");
+	 if ($record) {
+		 print "This course is already prepared to connect to the webwork course $wwCourseName. ";
 	        
-	        }
+			
 
 	 } else {
-	        print "This course is already prepared to connect to the webwork course $wwCourseName. ";
-	        if (isadmin()) {
-	        	print("<p style='font-size: smaller; color: #aaa; text-align: center;'>
-		        <a style='color: black;text-decoration:underline' href='".WWMOODLE_WEBWORK_URL."/admin'>"."Link to create WeBWorK course"."</a></p>");
-	        
-	        }
-	 
-	 
-	 
+	     print "This course will be connected to $wwCourseName";
 	 }	
+	 if (isadmin()) {
+	        	print("<p style='font-size: smaller; color: #aaa; text-align: center;'>
+		        <a style='color: black;text-decoration:underline' href='".WWASSIGNMENT_WEBWORK_URL."/admin'>"."Link to create WeBWorK course"."</a></p>");
+	        
+	}
 ?>
 	</td></tr>
 	<tr valign="top">
@@ -89,7 +80,7 @@ if( ! isset($form->gradingmethod) ) {
 		<td align='right'><label for='set_id'><b><?php print_string("set_id", "wwassignment"); ?>:</b></label><br />
 			<?php helpbutton("set_id", get_string("helpSet_id", "wwassignment"), "wwassignment", true, true); ?>
 		</td>
-		<td align='left'><?php wwassignment_printSetSelect($form->course, $form->set_id); ?></td>
+		<td align='left'><?php _wwassignment_printSetSelect($form->course, $form->set_id); ?></td>
 	</tr>
 	<tr valign="top">
 		<td align="right"><b><?php print_string("description", "assignment") ?>:</b>
@@ -153,7 +144,7 @@ if( ! isset($form->gradingmethod) ) {
 	<?php
 		if( isteacher($course->id) ) {
 			print("<p style='font-size: smaller; color: #aaa; text-align: center;'>
-			 <a style='color: #666;text-decoration:underline' href='".WWMOODLE_SET_WEBWORK_URL."/$course->shortname/instructor' target='_webwork_edit'>"
+			 <a style='color: #666;text-decoration:underline' href='".WWASSIGNMENT_WEBWORK_URL."/$course->shortname/instructor' target='_webwork_edit'>"
 			 .get_string("goToWeBWorK", "wwmoodle")."</a></p>");
 		}
 	?>

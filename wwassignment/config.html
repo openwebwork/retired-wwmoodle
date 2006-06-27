@@ -1,53 +1,42 @@
 <?php
 // $Id$
-	if( empty($CFG->wwassignment_webwork_url) ) {
-		$CFG->wwassignment_webwork_url = "/webwork2";
+	if( empty($CFG->wwassignment_webworkurl) ) {
+		$CFG->wwassignment_webworkurl = "/webwork2";
 	}
-	if( empty($CFG->wwassignment_iframe_width) ) {
-		$CFG->wwassignment_iframe_width = "95%";
+	if( empty($CFG->wwassignment_iframewidth) ) {
+		$CFG->wwassignment_iframewidth = "95%";
 	}
-	if( empty($CFG->wwassignment_iframe_height) ) {
-		$CFG->wwassignment_iframe_height = "500px";
+	if( empty($CFG->wwassignment_iframeheight) ) {
+		$CFG->wwassignment_iframeheight = "500px";
 	}
-	if( empty($CFG->wwmoodle_webwork_db) ) {
-		$CFG->wwmoodle_webwork_db = "";
-	}
-	if( empty($CFG->wwmoodle_webwork_courses) ) {
-		$CFG->wwmoodle_webwork_courses = "/opt/webwork2/courses/";
-	}
-	if( empty($CFG->wwmoodle_webwork_delete) ) {
-		$CFG->wwmoodle_webwork_delete = "off";
+
+	if( empty($CFG->wwassignment_webworkcourses) ) {
+		$CFG->wwassignment_webworkcourses = "/opt/webwork2/courses/";
 	}
 ?>
 
 <form method="post" action="module.php" name="form">
 	<input type="hidden" name="sesskey" value="<?php echo $USER->sesskey ?>">
 	<table cellpadding="9" cellspacing="0" >
-<!-- 
-	    <tr valign='top'>
-			<td align="right"><label for='wwmoodle_webwork_db'><b>wwmoodle_webwork_db:</b></label></td>
-			<td><input type='text' name='wwmoodle_webwork_db' id='wwmoodle_webwork_db' value="<?php p($CFG->wwmoodle_webwork_db); ?>" /></td>
-			<td><?php print_string('webwork_db', 'wwmoodle'); ?></td>
-		</tr>
- -->
+
 		<tr valign='top'>
-			<td align='right'><label for='wwmoodle_webwork_courses'><b>wwmoodle_webwork_courses:</b></label></td>
-			<td><input type='text' name='wwmoodle_webwork_courses' id='wwmoodle_webwork_courses' value="<?php p($CFG->wwmoodle_webwork_courses); ?>" /></td>
-			<td><?php print_string('webwork_courses', 'wwmoodle'); ?></td>
+			<td align='right'><label for='wwassignment_webworkcourses'><b>wwassignment_webworkcourses:</b></label></td>
+			<td><input type='text' name='wwassignment_webworkcourses' id='wwassignment_webworkcourses' value="<?php p($CFG->wwassignment_webworkcourses); ?>" /></td>
+			<td><?php print_string('webwork_courses', 'wwassignment'); ?></td>
 		</tr>
 		<tr valign='top'>
-			<td align="right"><label for='wwassignment_webwork_url'><b>wwassignment_webwork_url:</b></label></td>
-			<td><input type='text' name='wwassignment_webwork_url' id='wwassignment_webwork_url' value="<?php p($CFG->wwassignment_webwork_url); ?>" /></td>
+			<td align="right"><label for='wwassignment_webworkurl'><b>wwassignment_webworkurl:</b></label></td>
+			<td><input type='text' name='wwassignment_webworkurl' id='wwassignment_webworkurl' value="<?php p($CFG->wwassignment_webworkurl); ?>" /></td>
 			<td><?php print_string('webwork_url', 'wwassignment'); ?></td>
 		</tr>
 		<tr valign='top'>
-			<td align='right'><label for='wwassignment_iframe_width'><b>wwassignment_iframe_width:</b></label></td>
-			<td><input type='text' name='wwassignment_iframe_width' id='wwassignment_iframe_width' value="<?php p($CFG->wwassignment_iframe_width); ?>" /></td>
+			<td align='right'><label for='wwassignment_iframewidth'><b>wwassignment_iframewidth:</b></label></td>
+			<td><input type='text' name='wwassignment_iframewidth' id='wwassignment_iframewidth' value="<?php p($CFG->wwassignment_iframewidth); ?>" /></td>
 			<td><?php print_string('iframe_width', 'wwassignment'); ?></td>
 		</tr>
 		<tr valign='top'>
-			<td align='right'><label for='wwassignment_iframe_height'><b>wwassignment_iframe_height:</b></label></td>
-			<td><input type='text' name='wwassignment_iframe_height' id='wwassignment_iframe_height' value="<?php p($CFG->wwassignment_iframe_height); ?>" /></td>
+			<td align='right'><label for='wwassignment_iframeheight'><b>wwassignment_iframeheight:</b></label></td>
+			<td><input type='text' name='wwassignment_iframeheight' id='wwassignment_iframeheight' value="<?php p($CFG->wwassignment_iframeheight); ?>" /></td>
 			<td><?php print_string('iframe_height', 'wwassignment'); ?></td>
 		</tr>
 		<tr>

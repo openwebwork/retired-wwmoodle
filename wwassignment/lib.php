@@ -1,5 +1,5 @@
 <?php
-// $Id: lib.php,v 1.1 2006-06-27 20:08:02 gage Exp $
+// $Id: lib.php,v 1.2 2006-06-27 23:21:41 gage Exp $
 //require_once("DB.php");
 function debug_log($obj) {
 	$fh = fopen("/home/gage/moodle_debug", "w");
@@ -26,43 +26,16 @@ require_once($CFG->libdir.'/adodb/adodb-pear.inc.php');
 /**
  * These defines exist simply for easy of referencing them in functions.
  */
-define('WWMOODLE_WEBWORK_DB', $CFG->wwmoodle_webwork_db);
 /**
  * The location of the webwork courses directory.
  * The user that this script executes as must have write access to this directory.
  * This must end in a /!
  */
-define('WWMOODLE_WEBWORK_COURSES', $CFG->wwmoodle_webwork_courses);
+define('WWASSIGNMENT_WEBWORK_COURSES', $CFG->wwassignment_webworkcourses);
 /**
  * The URL of the WeBWorK install.
  */
-define('WWMOODLE_WEBWORK_URL', $CFG->wwassignment_webwork_url);
-
-/**
- * Maps a course ID number to it's (sanatized) shortname.
- * @param int $iCourseID The ID of the course.
- * @return string The shortname of the course, with unsafe characters removed. If the courseID is not found, null is returned.
- */
-function wwmoodle_courseIdToShortName($iCourseId) {
-	$c = get_record('course', 'id', $iCourseId);
-	if( ! $c ) {
-		return null;
-	}
-	$shortname = preg_replace("/[^a-zA-Z0-9]/", "", $c->shortname);
-	return $shortname;
-}
-
-
-
-
-
-
-
-
-
-
-
-
+define('WWASSIGNMENT_WEBWORK_URL', $CFG->wwassignment_webworkurl);
 
 
 
@@ -75,14 +48,14 @@ function wwmoodle_courseIdToShortName($iCourseId) {
  * The URL of your WeBWorK installation.
  */
 define('WW_TABLE_PREFIX', 'webwork');
-define('WWMOODLE_SET_WEBWORK_URL', $CFG->wwassignment_webwork_url);
+define('WWASSIGNMENT_WEBWORK_URL', $CFG->wwassignment_webwork_url);
 /**
  * The PEAR::DB connection string to connect to the WeBWorK database.
  * This is in the form:
  * type://username:password@host/dbname
  * Where type is usually either 'mysql', 'mysqli', or 'pgsql'
  */
-define('WWMOODLE_SET_WEBWORK_DB', $CFG->wwmoodle_webwork_db);
+define('WWASSIGNMENT_WEBWORK_DB', $CFG->wwmoodle_webwork_db);
 
 
 function wwassignment_gradeMethods() {
@@ -112,79 +85,8 @@ function wwassignment_printGradeMethodSelect($iGradeMethod='-1') {
 	}
 }
 
-/**
- * Gets the max grade for a given problem set.
- * Essentially, this is just the number of problems in the set.
- * @param int $iSetId The id of the set.
- * @param string $sCourseName The name of this course.
- * @return int
- */
-function _wwrpc_getMaxSetGrade($iSetId, $sCourseName) {
-	global $db, $CFG;
-    if (!$res = $db->Execute($sql)) {
-        if (isset($CFG->debug) and $CFG->debug > 7) {
-            notify($db->ErrorMsg() .'<br /><br />'. $sql);
-        }
-        if (!empty($CFG->dblogerror)) {
-            $debug=array_shift(debug_backtrace());
-            error_log("SQL ".$db->ErrorMsg()." in {$debug['file']} on line {$debug['line']}. STATEMENT:  $sql");
-        }
-        return false;
-    }
 
-	$qry = "SELECT COUNT(*) FROM ". WW_TABLE_PREFIX.".{$sCourseName}_problem WHERE set_id=?";
-	if (!$res = $db->query($qry, array($iSetId))) {
-        if (isset($CFG->debug) and $CFG->debug > 7) {
-            notify($db->ErrorMsg() .'<br /><br />'. $sql);
-        }
-        if (!empty($CFG->dblogerror)) {
-            $debug=array_shift(debug_backtrace());
-            error_log("SQL ".$db->ErrorMsg()." in {$debug['file']} on line {$debug['line']}. STATEMENT:  $sql");
-        }
-        return false;
-    }
-	$row = $res->fetchRow();
-	$res->free();
-	return $row ? $row['COUNT(*)'] : -1;
-}
 
-/**
- * Gets the results of all the problems in the given set for the given user.
- * @param string $sUserName The name of the user to check for.
- * @param int $iSetId The id of the set to check for.
- * @param string $sCourseName The name of this course.
- * @return array An array of the results of all the problems for this user.
- */
-function _wwrpc_getProblemsForUser($sUserName, $iSetId, $sCourseName) {
-	debug_log("start getProblemsForUser");
-    global $db, $CFG;
- 	$qry = "SELECT * FROM ". WW_TABLE_PREFIX.".{$sCourseName}_problem_user WHERE user_id=? AND set_id=? ORDER BY problem_id";
-	if (!$res = $db->query($qry, array($sUserName, $iSetId))) {
-        if (isset($CFG->debug) and $CFG->debug > 7) {
-            notify($db->ErrorMsg() .'<br /><br />'. $sql);
-        }
-        if (!empty($CFG->dblogerror)) {
-            $debug=array_shift(debug_backtrace());
-            error_log("SQL ".$db->ErrorMsg()." in {$debug['file']} on line {$debug['line']}. STATEMENT:  $sql");
-        }
-        return false;
-    }
- 	$row = $res->fetchRow();
- 	!$row ? $row = array() : $row = $row;
- 	$res->free();
-	return $row;
-}
-
-/**
- * Returns a URL to the specified set.
- * @param int $iSetId The set ID to link to.
- * @param string $sCourseName The name of this course.
- * @return string The URL to the specified set. This might be absolute, or relative. However, it is assured of working.
- */
-function wwassignment_linkToSet($iSetId, $sCourseName) {
-	// TODO: Verify me.
-	return WWMOODLE_SET_WEBWORK_URL."/$sCourseName/$iSetId";
-}
 
 /**
  * Maps a course ID number to it's (sanatized) shortname.
@@ -200,108 +102,27 @@ function wwassignment_courseIdToShortName($iCourseId) {
 	return $shortname;
 }
 
-/**
- * Gets information about the specified set.
- * @param int $iSetId The id of the set.
- * @param $sCourseName The name of this course
- * @return array Information about the set.
- */
-function _wwrpc_getSetInfo($iSetId, $sCourseName) {
-	global $db, $CFG;
-	$qry = "SELECT * FROM ". WW_TABLE_PREFIX.".{$sCourseName}_set WHERE set_id=?";
-    //error_log("get info for set $iSetID and $sCourseName");
-	if (!$res = $db->query($qry, array($iSetId))) {
-        if (isset($CFG->debug) and $CFG->debug > 7) {
-            notify($db->ErrorMsg() .'<br /><br />'. $sql);
-        }
-        if (!empty($CFG->dblogerror)) {
-            $debug=array_shift(debug_backtrace());
-            error_log("SQL ".$db->ErrorMsg()." in {$debug['file']} on line {$debug['line']}. STATEMENT:  $sql");
-        }
-        return false;
-    }
-	$row = $res->fetchRow();
-	if( ! $row ) {
-		return array('set_id' => $iSetId, 'set_header' => "Unable to get information for this set.", 'hardcopy_header' => "Unable to get information for this set.", 'open_date'=>time(), 'due_date'=>time(), 'answer_date'=>time(), 'published'=>time());
-	}
-	$res->free();
-	//error_log("result from getSetInfo");
-	return $row;
-}
 
-/**
- * Prints an HTML select widget allowing for selection of any of the sets defined
- * for this course in WeBWorK.
- * @pre There is a WeBWorK course for this course.
- * @param int $iCourseId The id of this course.
- * @param int $iSetId The set id to have selected.
- * @return void
- */
-function wwassignment_printSetSelect($iCourseId, $iSetId=-1) {
-	global $db, $CFG;
-	debug_log("starting printSetSelect");
-	$sCourseName = wwassignment_courseIdToShortName($iCourseId);
-	if( is_null($sCourseName) ) {
-		print("<b>Unable to find the name of this course.</b>\n");
-		return;
-	}
-	
-	// now get a list of all sets for this course:
-	$qry = "SELECT * FROM ". WW_TABLE_PREFIX.".{$sCourseName}_set ORDER BY open_date DESC";
-	if (!$res = $db->query($qry)) {
-        if (isset($CFG->debug) and $CFG->debug > 7) {
-            notify($db->ErrorMsg() .'<br /><br />'. $sql);
-        }
-        if (!empty($CFG->dblogerror)) {
-            $debug=array_shift(debug_backtrace());
-            error_log("SQL ".$db->ErrorMsg()." in {$debug['file']} on line {$debug['line']}. STATEMENT:  $sql");
-        }
-        return false;
-    }
-	$aSets = array();
-	debug_log("got sets");
- 	while( $row = $res->fetchRow() ) {
- 		$aSets[] = $row['set_id'];
- 	}
-	$res->free();
-	
-	
-	// now print the option box, if we have any to print:
-	if( count($aSets) < 1 ) {
-		print("<b>No sets exist for this course. Please create one via <a href='" . WWMOODLE_SET_WEBWORK_URL . "/$sCourseName'>WeBWorK</a>.</b>\n");
-		return;
-	}
-	print("<select id='set_id' name='set_id'>\n");
-	foreach( $aSets as $s ) {
-		print("<option value='");
-		p($s);
-		print("'");
-		if( $s == $iSetId ) {
-			print("selected='selected'");
-		}
-		print(">$s</option>\n");
-	}
-	print("</select>\n");
-}
 
 function wwassignment_add_instance($wwassignment) {
 /// Given an object containing all the necessary data, 
 /// (defined by the form in mod.html) this function 
 /// will create a new instance and return the id number 
 /// of the new instance.
-    $oCourse = get_record("course", "id", $wwassignment->course);
-	$aMods = get_all_instances_in_course("wwmoodle", $oCourse);
-
-	if (count($aMods) == 0 ) {  #add bridge entry
+	$record = get_record("wwassignment_bridge", "course",$wwassignment->course);    
+	if (! $record ) {  #add bridge entry
 		// check if bridge exists
-		$wwassignment->timemodified = time();
-		$wwassignment->coursename = wwmoodle_courseIdToShortName($wwassignment->course);
-		if (! isset($wwassignment->coursename) ){
-			 $wwassignment->coursename = "foo";
+		$wwassignment_bridge->timemodified = time();
+        $wwassignment_bridge->course = $wwassignment->course;
+		$wwassignment_bridge->coursename = _wwassignment_courseIdToShortName($wwassignment->course);
+		$wwassignment_bridge->name = $wwassignment_bridge->coursename;
+		if (! isset($wwassignment_bridge->coursename) ){
+			 $wwassignment_bridge->coursename = "foo";
 		}
-		error_log("add entry to wwmoodle");
-		error_log(print_r($wwassignment, true));
-		$returnid = insert_record("wwmoodle",$wwassignment);
+// 		error_log("add entry to wwmoodle");
+// 		error_log(print_r($wwassignment, true));
+		$returnid = insert_record("wwassignment_bridge",$wwassignment_bridge);
+		error_log("inserting new entry to wwassignment_bridge");
 	} 
 	# create set
 	$aSetInfo = _wwrpc_getSetInfo($wwassignment->set_id, wwassignment_courseIdToShortName($wwassignment->course));
@@ -311,7 +132,7 @@ function wwassignment_add_instance($wwassignment) {
 	$wwassignment->timedue = $aSetInfo['due_date'];
 	$wwassignment->timeavailable = $aSetInfo['open_date'];
 	error_log("add wwassignment record");
-	error_log(print_r($wwassignment, true));
+//	error_log(print_r($wwassignment, true));
 	if ($returnid = insert_record("wwassignment", $wwassignment)) {
 		if ($wwassignment->timedue) {
 			$event = NULL;
@@ -536,11 +357,6 @@ function wwassignment_scale_used ($wwassignmentid,$scaleid) {
 	}
 	return $return;
 }
-
-//////////////////////////////////////////////////////////////////////////////////////
-/// Any other wwassignment functions go here.  Each of them must have a name that 
-/// starts with wwassignment_
-
 function wwassignment_refresh_events($courseid = 0) {
     error_log("wwassignment_refresh_events called");
     if ($courseid == 0) {
@@ -579,4 +395,184 @@ function wwassignment_refresh_events($courseid = 0) {
     return true;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////////
+// calls to WeBWorK database start with _wwrpc_
+///////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Gets information about the specified set.
+ * @param int $iSetId The id of the set.
+ * @param $sCourseName The name of this course
+ * @return array Information about the set.
+ */
+function _wwrpc_getSetInfo($iSetId, $sCourseName) {
+	global $db, $CFG;
+	$qry = "SELECT * FROM ". WW_TABLE_PREFIX.".{$sCourseName}_set WHERE set_id=?";
+    //error_log("get info for set $iSetID and $sCourseName");
+	if (!$res = $db->query($qry, array($iSetId))) {
+        if (isset($CFG->debug) and $CFG->debug > 7) {
+            notify($db->ErrorMsg() .'<br /><br />'. $sql);
+        }
+        if (!empty($CFG->dblogerror)) {
+            $debug=array_shift(debug_backtrace());
+            error_log("SQL ".$db->ErrorMsg()." in {$debug['file']} on line {$debug['line']}. STATEMENT:  $sql");
+        }
+        return false;
+    }
+	$row = $res->fetchRow();
+	if( ! $row ) {
+		return array('set_id' => $iSetId, 'set_header' => "Unable to get information for this set.", 'hardcopy_header' => "Unable to get information for this set.", 'open_date'=>time(), 'due_date'=>time(), 'answer_date'=>time(), 'published'=>time());
+	}
+	$res->free();
+	//error_log("result from getSetInfo");
+	return $row;
+}
+
+/**
+ * Gets the max grade for a given problem set.
+ * Essentially, this is just the number of problems in the set.
+ * @param int $iSetId The id of the set.
+ * @param string $sCourseName The name of this course.
+ * @return int
+ */
+function _wwrpc_getMaxSetGrade($iSetId, $sCourseName) {
+	global $db, $CFG;
+    if (!$res = $db->Execute($sql)) {
+        if (isset($CFG->debug) and $CFG->debug > 7) {
+            notify($db->ErrorMsg() .'<br /><br />'. $sql);
+        }
+        if (!empty($CFG->dblogerror)) {
+            $debug=array_shift(debug_backtrace());
+            error_log("SQL ".$db->ErrorMsg()." in {$debug['file']} on line {$debug['line']}. STATEMENT:  $sql");
+        }
+        return false;
+    }
+
+	$qry = "SELECT COUNT(*) FROM ". WW_TABLE_PREFIX.".{$sCourseName}_problem WHERE set_id=?";
+	if (!$res = $db->query($qry, array($iSetId))) {
+        if (isset($CFG->debug) and $CFG->debug > 7) {
+            notify($db->ErrorMsg() .'<br /><br />'. $sql);
+        }
+        if (!empty($CFG->dblogerror)) {
+            $debug=array_shift(debug_backtrace());
+            error_log("SQL ".$db->ErrorMsg()." in {$debug['file']} on line {$debug['line']}. STATEMENT:  $sql");
+        }
+        return false;
+    }
+	$row = $res->fetchRow();
+	$res->free();
+	return $row ? $row['COUNT(*)'] : -1;
+}
+
+/**
+ * Gets the results of all the problems in the given set for the given user.
+ * @param string $sUserName The name of the user to check for.
+ * @param int $iSetId The id of the set to check for.
+ * @param string $sCourseName The name of this course.
+ * @return array An array of the results of all the problems for this user.
+ */
+function _wwrpc_getProblemsForUser($sUserName, $iSetId, $sCourseName) {
+	debug_log("start getProblemsForUser");
+    global $db, $CFG;
+ 	$qry = "SELECT * FROM ". WW_TABLE_PREFIX.".{$sCourseName}_problem_user WHERE user_id=? AND set_id=? ORDER BY problem_id";
+	if (!$res = $db->query($qry, array($sUserName, $iSetId))) {
+        if (isset($CFG->debug) and $CFG->debug > 7) {
+            notify($db->ErrorMsg() .'<br /><br />'. $sql);
+        }
+        if (!empty($CFG->dblogerror)) {
+            $debug=array_shift(debug_backtrace());
+            error_log("SQL ".$db->ErrorMsg()." in {$debug['file']} on line {$debug['line']}. STATEMENT:  $sql");
+        }
+        return false;
+    }
+ 	$row = $res->fetchRow();
+ 	!$row ? $row = array() : $row = $row;
+ 	$res->free();
+	return $row;
+}
+////////////////////////////////////////////////////////////////////////////////////
+// internal functions start with _wwassignment
+///////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Prints an HTML select widget allowing for selection of any of the sets defined
+ * for this course in WeBWorK.
+ * @pre There is a WeBWorK course for this course.
+ * @param int $iCourseId The id of this course.
+ * @param int $iSetId The set id to have selected.
+ * @return void
+ */
+function _wwassignment_printSetSelect($iCourseId, $iSetId=-1) {
+	global $db, $CFG;
+	debug_log("starting printSetSelect");
+	$sCourseName = wwassignment_courseIdToShortName($iCourseId);
+	if( is_null($sCourseName) ) {
+		print("<b>Unable to find the name of this course.</b>\n");
+		return;
+	}
+	
+	// now get a list of all sets for this course:
+	$qry = "SELECT * FROM ". WW_TABLE_PREFIX.".{$sCourseName}_set ORDER BY open_date DESC";
+	if (!$res = $db->query($qry)) {
+        if (isset($CFG->debug) and $CFG->debug > 7) {
+            notify($db->ErrorMsg() .'<br /><br />'. $sql);
+        }
+        if (!empty($CFG->dblogerror)) {
+            $debug=array_shift(debug_backtrace());
+            error_log("SQL ".$db->ErrorMsg()." in {$debug['file']} on line {$debug['line']}. STATEMENT:  $sql");
+        }
+        return false;
+    }
+	$aSets = array();
+	debug_log("got sets");
+ 	while( $row = $res->fetchRow() ) {
+ 		$aSets[] = $row['set_id'];
+ 	}
+	$res->free();
+	
+	
+	// now print the option box, if we have any to print:
+	if( count($aSets) < 1 ) {
+		print("<b>No sets exist for this course. Please create one via <a href='" . WWASSIGNMENT_WEBWORK_URL . "/$sCourseName'>WeBWorK</a>.</b>\n");
+		return;
+	}
+	print("<select id='set_id' name='set_id'>\n");
+	foreach( $aSets as $s ) {
+		print("<option value='");
+		p($s);
+		print("'");
+		if( $s == $iSetId ) {
+			print("selected='selected'");
+		}
+		print(">$s</option>\n");
+	}
+	print("</select>\n");
+}
+
+/**
+ * Maps a course ID number to it's (sanatized) shortname.
+ * @param int $iCourseID The ID of the course.
+ * @return string The shortname of the course, with unsafe characters removed. If the courseID is not found, null is returned.
+ */
+function _wwassignment_courseIdToShortName($iCourseId) {
+	$c = get_record('course', 'id', $iCourseId);
+	if( ! $c ) {
+		return null;
+	}
+	$shortname = preg_replace("/[^a-zA-Z0-9]/", "", $c->shortname);
+	return $shortname;
+}
+
+
+/**
+ * Returns a URL to the specified set.
+ * @param int $iSetId The set ID to link to.
+ * @param string $sCourseName The name of this course.
+ * @return string The URL to the specified set. This might be absolute, or relative. However, it is assured of working.
+ */
+function _wwassignment_linkToSet($iSetId, $sCourseName) {
+	// TODO: Verify me.
+	return WWASSIGNMENT_WEBWORK_URL."/$sCourseName/$iSetId";
+}
 ?>

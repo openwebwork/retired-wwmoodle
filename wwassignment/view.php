@@ -1,5 +1,5 @@
 <?php
-// $Id: view.php,v 1.1 2006-06-27 20:08:02 gage Exp $
+// $Id: view.php,v 1.2 2006-06-27 23:21:41 gage Exp $
 
 /// This page prints a particular instance of wwassignment
 /// (Replace wwassignment with the name of your module)
@@ -51,12 +51,12 @@ print_header("$course->shortname: $wwassignment->name", "$course->fullname", "$n
 
 /// Print the main part of the page
 
-$sSetLink = wwassignment_linkToSet($wwassignment->set_id, wwassignment_courseIdToShortName($wwassignment->course));
+$sSetLink = _wwassignment_linkToSet($wwassignment->set_id, wwassignment_courseIdToShortName($wwassignment->course));
 print("<p style='font-size: smaller; color: #aaa;'>" . get_string("iframeNoShow-1", "wwassignment")
       . "<a href='$sSetLink'>" . get_string("iframeNoShow-2", "wwassignment") . "</a>.</p>\n");
 print("<p align='center'><iframe id='wwPage' src='$sSetLink' frameborder='1' "
-      . "width='".$CFG->wwassignment_iframe_width."' "
-      . "height='".$CFG->wwassignment_iframe_height."'>"
+      . "width='".$CFG->wwassignment_iframewidth."' "
+      . "height='".$CFG->wwassignment_iframeheight."'>"
       . get_string("iframeNoShow-1", "wwassignment") . "<a href='$sSetLink'>" . get_string("iframeNoShow-2", "wwassignment")
       . "</a>.</iframe></p>\n");
 
