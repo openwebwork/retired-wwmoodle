@@ -26,6 +26,14 @@ wwassigment/lang.php     to         ...../moodle/lang/en/wwassigment.php
  
 These two files will need to be updated by hand everytime they change in the CVS.
 
+If you are using the new utf8 encoding then transfer the files above to:
+
+wwassigment/help         to         ...../moodle/lang/en_utf8/help/wwassigment
+wwassigment/lang.php     to         ...../moodle/lang/en_utf8/wwassigment.php
+
+
+
+
 
 #################################################################################
 The instructions below are mostly obsolete.
