@@ -1,5 +1,5 @@
 <?php
-// $Id: lib.php,v 1.3 2006-06-29 16:10:43 gage Exp $
+// $Id: lib.php,v 1.4 2006-06-29 17:54:28 gage Exp $
 //require_once("DB.php");
 function debug_log($obj) {
 	$fh = fopen("/home/gage/moodle_debug", "w");
@@ -324,11 +324,13 @@ function wwassignment_grades($wwassignmentid) {
  		$aProblems = _wwrpc_getProblemsForUser($s->username, $oMod->set_id, $sCourseName);
  		$fGrade = 0.0;
 		foreach( $aProblems as $p ) {
+		    //debug_log("student".$s->username." set ".$oMod->set_id." score ". $p['num_correct']);
 			eval($gradeFormula);
 		}
 		$oGrades->grades[$s->id] = $fGrade;
  	}
 	$oGrades->maxgrade = _wwrpc_getMaxSetGrade($oMod->set_id, $sCourseName);
+	debug_log("all grades".print_r($oGrades, true));
 	return $oGrades;
 }
 
@@ -440,16 +442,7 @@ function _wwrpc_getSetInfo($iSetId, $sCourseName) {
  */
 function _wwrpc_getMaxSetGrade($iSetId, $sCourseName) {
 	global $db, $CFG;
-    if (!$res = $db->Execute($sql)) {
-        if (isset($CFG->debug) and $CFG->debug > 7) {
-            notify($db->ErrorMsg() .'<br /><br />'. $sql);
-        }
-        if (!empty($CFG->dblogerror)) {
-            $debug=array_shift(debug_backtrace());
-            error_log("SQL ".$db->ErrorMsg()." in {$debug['file']} on line {$debug['line']}. STATEMENT:  $sql");
-        }
-        return false;
-    }
+
 
 	$qry = "SELECT COUNT(*) FROM ". WW_TABLE_PREFIX.".{$sCourseName}_problem WHERE set_id=?";
 	if (!$res = $db->query($qry, array($iSetId))) {
@@ -488,8 +481,12 @@ function _wwrpc_getProblemsForUser($sUserName, $iSetId, $sCourseName) {
         }
         return false;
     }
- 	$row = $res->fetchRow();
+ 	$row = $res->getArray();
  	!$row ? $row = array() : $row = $row;
+ 	
+ 	//debug_log("row for $sUserName $iSetID");
+ 	//debug_log(print_r($row,true));
+ 	
  	$res->free();
 	return $row;
 }
