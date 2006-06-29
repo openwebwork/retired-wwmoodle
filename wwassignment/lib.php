@@ -1,5 +1,5 @@
 <?php
-// $Id: lib.php,v 1.2 2006-06-27 23:21:41 gage Exp $
+// $Id: lib.php,v 1.3 2006-06-29 16:10:43 gage Exp $
 //require_once("DB.php");
 function debug_log($obj) {
 	$fh = fopen("/home/gage/moodle_debug", "w");
@@ -73,7 +73,7 @@ function wwassignment_gradeMethods() {
  * @return void
  */
 function wwassignment_printGradeMethodSelect($iGradeMethod='-1') {
-    debug_log("printGrademethodSelect called");
+    // debug_log("printGrademethodSelect called");
 	$wwassignment_gradeMethods = wwassignment_gradeMethods();
 	print("<select id='gradingmethod' name='gradingmethod'>\n");
 	foreach( $wwassignment_gradeMethods as $k=>$g ) {
@@ -299,7 +299,7 @@ function wwassignment_grades($wwassignmentid) {
 	// again with a max of P
 	
 	// redefine it here, 'cause for some reason we can't global it...
-    debug_log("start grades");
+    //debug_log("start grades ".$wwassignmentid);
 	$wwassignment_gradeMethods = wwassignment_gradeMethods();
 	
 	$oGrades->grades = array();
@@ -309,7 +309,9 @@ function wwassignment_grades($wwassignmentid) {
 	if( ! $oMod ) {
 		return NULL;
 	}
-	$gradeFormula = $wwassignment_gradeMethods[$oMod->grade_method]['formula'];
+	//debug_log("record ".print_r($oMod,true));
+	$gradeFormula = $wwassignment_gradeMethods[$oMod->gradingmethod]['formula'];
+	//debug_log("formula ".print_r($gradeFormula, true));
 	if( empty($gradeFormula) ) {
 		return NULL;
 	}
@@ -473,7 +475,7 @@ function _wwrpc_getMaxSetGrade($iSetId, $sCourseName) {
  * @return array An array of the results of all the problems for this user.
  */
 function _wwrpc_getProblemsForUser($sUserName, $iSetId, $sCourseName) {
-	debug_log("start getProblemsForUser");
+	// debug_log("start getProblemsForUser");
     global $db, $CFG;
  	$qry = "SELECT * FROM ". WW_TABLE_PREFIX.".{$sCourseName}_problem_user WHERE user_id=? AND set_id=? ORDER BY problem_id";
 	if (!$res = $db->query($qry, array($sUserName, $iSetId))) {
@@ -505,7 +507,7 @@ function _wwrpc_getProblemsForUser($sUserName, $iSetId, $sCourseName) {
  */
 function _wwassignment_printSetSelect($iCourseId, $iSetId=-1) {
 	global $db, $CFG;
-	debug_log("starting printSetSelect");
+	// debug_log("starting printSetSelect");
 	$sCourseName = wwassignment_courseIdToShortName($iCourseId);
 	if( is_null($sCourseName) ) {
 		print("<b>Unable to find the name of this course.</b>\n");
@@ -525,7 +527,7 @@ function _wwassignment_printSetSelect($iCourseId, $iSetId=-1) {
         return false;
     }
 	$aSets = array();
-	debug_log("got sets");
+	// debug_log("got sets");
  	while( $row = $res->fetchRow() ) {
  		$aSets[] = $row['set_id'];
  	}
