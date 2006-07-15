@@ -1,5 +1,5 @@
 <?php
-// $Id: lib.php,v 1.4 2006-06-29 17:54:28 gage Exp $
+// $Id: lib.php,v 1.5 2006-07-15 14:07:07 gage Exp $
 //require_once("DB.php");
 function debug_log($obj) {
 	$fh = fopen("/home/gage/moodle_debug", "w");
@@ -17,7 +17,7 @@ $path = ini_get('include_path');
 //ini_set('include_path', $path . 'lib/adodb');
 //require_once("PEAR.php");
 //require_once("DB.php");
-require_once($CFG->libdir.'/adodb/adodb-pear.inc.php');
+//require_once($CFG->libdir.'/adodb/adodb-pear.inc.php');
 //endMEG
 
 
