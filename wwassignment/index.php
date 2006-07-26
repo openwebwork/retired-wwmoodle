@@ -1,5 +1,5 @@
 <?php
-// $Id: index.php,v 1.1 2006-06-27 20:08:02 gage Exp $
+// $Id: index.php,v 1.2 2006-07-26 21:27:27 gage Exp $
 
 
 /// This page lists all the instances of wwassignment in a particular course
@@ -83,7 +83,7 @@ print_header("$course->shortname: $strwwassignments", "$course->fullname", "$nav
     
     print_table($table);
     if( isteacher($course->id) ) {
-		print("<p style='font-size: smaller; color: #aaa; text-align: center;'><a style='color: #666;text-decoration:underline' href='".WWMOODLE_SET_WEBWORK_URL."/$course->shortname/instructor' target='_webwork_edit'>".get_string("goToWeBWorK", "wwmoodle")."</a></p>");
+		print("<p style='font-size: smaller; color: #aaa; text-align: center;'><a style='color: #666;text-decoration:underline' href='".WWASSIGNMENT_WEBWORK_URL."/$course->shortname/instructor' target='_webwork_edit'>".get_string("goToWeBWorK", "wwassignment")."</a></p>");
 	}
 /// Finish the page
 

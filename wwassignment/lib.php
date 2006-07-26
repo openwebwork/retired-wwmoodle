@@ -1,5 +1,5 @@
 <?php
-// $Id: lib.php,v 1.5 2006-07-15 14:07:07 gage Exp $
+// $Id: lib.php,v 1.6 2006-07-26 21:27:27 gage Exp $
 //require_once("DB.php");
 function debug_log($obj) {
 	$fh = fopen("/home/gage/moodle_debug", "w");
@@ -122,7 +122,7 @@ function wwassignment_add_instance($wwassignment) {
 // 		error_log("add entry to wwmoodle");
 // 		error_log(print_r($wwassignment, true));
 		$returnid = insert_record("wwassignment_bridge",$wwassignment_bridge);
-		error_log("inserting new entry to wwassignment_bridge");
+		error_log("inserting new entry to wwassignment_bridge id= $returnid");
 	} 
 	# create set
 	$aSetInfo = _wwrpc_getSetInfo($wwassignment->set_id, wwassignment_courseIdToShortName($wwassignment->course));
