@@ -24,11 +24,17 @@ CREATE TABLE `prefix_wwassignment` (
 
 # Insert sane defaults for config options:
 
-INSERT INTO `prefix_config` (`name`, `value`) VALUES ('wwassignment_webworkurl', '/webwork2');
+# using IGNORE to throw away duplicate key errors when a config item already
+# exists (i.e. from removal and subsequent reinstallation). this preserves
+# existing values. another way to go would be to use REPLACE to overwrite
+# existing values. this would ensure that at installation time, the defaults
+# would be up-to-date.
 
-INSERT INTO `prefix_config` (`name`, `value`) VALUES ('wwassignment_iframewidth', '90%');
+INSERT IGNORE INTO `prefix_config` (`name`, `value`) VALUES ('wwassignment_webworkurl', '/webwork2');
 
-INSERT INTO `prefix_config` (`name`, `value`) VALUES ('wwassignment_iframeheight', '500px');
+INSERT IGNORE INTO `prefix_config` (`name`, `value`) VALUES ('wwassignment_iframewidth', '90%');
+
+INSERT IGNORE INTO `prefix_config` (`name`, `value`) VALUES ('wwassignment_iframeheight', '500px');
 
 
 # This file contains a complete database schema for all the 
@@ -53,4 +59,6 @@ CREATE TABLE `prefix_wwassignment_bridge` (
 
 # Insert sane default config options:
 
-INSERT INTO `prefix_config` (`name`, `value`) VALUES ('wwassignment_bridge_webworkcourses', '/opt/webwork2/courses/');
+# (same IGNORE option used here, see above)
+
+INSERT IGNORE INTO `prefix_config` (`name`, `value`) VALUES ('wwassignment_bridge_webworkcourses', '/opt/webwork2/courses/');
