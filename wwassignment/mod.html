@@ -48,26 +48,21 @@ if( ! isset($form->gradingmethod) ) {
 ?> 
 
 	
-	<form name="form" method="post" action="mod.php">
-	<center>
-	<table cellpadding="5">
-	<tr><td>
 <?php
-	 if ($record) {
-		 print "This course is already prepared to connect to the webwork course $wwCourseName. ";
-	        
-			
-
-	 } else {
-	     print "This course will be connected to $wwCourseName";
-	 }	
-	 if (isadmin()) {
-	        	print("<p style='font-size: smaller; color: #aaa; text-align: center;'>
-		        <a style='color: black;text-decoration:underline' href='".WWASSIGNMENT_WEBWORK_URL."/admin'>"."Link to create WeBWorK course"."</a></p>");
+	if ($record) {
+		print "This course is already prepared to connect to the webwork course $wwCourseName.";
+	} else {
+		print "This course will be connected to $wwCourseName.";
+	}
+	if (isadmin()) {
+		print("<p style='font-size: smaller; color: #aaa; text-align: center;'>
+		       <a style='color: black;text-decoration:underline' href='".WWASSIGNMENT_WEBWORK_URL."/admin/?subDisplay=add_course&add_courseID=$wwCourseName&dbLayout=sql_moodle'>"."Create WeBWorK course"."</a></p>");
 	        
 	}
 ?>
-	</td></tr>
+	<form name="form" method="post" action="mod.php">
+	<center>
+	<table cellpadding="5">
 	<tr valign="top">
 		<td align="right"><label for='name'><b><?php  print_string("name") ?>:</b></label></td>
 		<td>
