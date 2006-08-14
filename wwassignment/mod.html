@@ -2,8 +2,39 @@
 <!-- It is used from /course/mod.php.  The whole instance is available as $form. -->
 
 <?php
-
 // $Id$
+
+// initial RPC experiment... not working out too well. i get completely
+// unenlightening "invalid argument" error.
+
+//	require_once 'XML/RPC.php';
+//	
+//	$msg = new XML_RPC_Message('WeBWorK.RPC.CourseManagement.listCourses');
+//	$cli = new XML_RPC_Client('/webwork2_rpc', 'https://devel.webwork.rochester.edu', 8000);
+//	//$cli->setDebug(1);
+//	$resp = $cli->send($msg);
+//	
+//	echo '<pre>';
+//	
+//	if ($resp) {
+//		if (!$resp->faultCode()) {
+//			$val = $resp->value();
+//			$data = XML_RPC_decode($val);
+//			echo print_r($data);
+//		} else {
+//			/*
+//			 * Display problems that have been gracefully cought and
+//			 * reported by the xmlrpc.php script
+//			 */
+//			echo 'Fault Code: ' . $resp->faultCode() . "\n";
+//			echo 'Fault Reason: ' . $resp->faultString() . "\n";
+//		}	
+//	} else {
+//		echo '<p>Communication error: ' . $cli->errstr . '</p>';
+//	}
+//	
+//	echo '</pre>';
+
 /// First we check that form variables have been initialised
 if (!isset($form->name)) {
 	$form->name = '';
@@ -19,54 +50,52 @@ if( ! isset($form->gradingmethod) ) {
 }
 
 // this is really hacky, but I need the contents of the lib.php for wwassignment:
-	require_once("../mod/wwassignment/lib.php"); 
-	//require_once ("$CFG->dirroot/mod/wwassignmentlib.php");
-	define('WWASSIGNMENT_WEBWORK_URL', $CFG->wwassignment_webworkurl);
-    
-    require_login($course->id);
-    
-    add_to_log($course->id, "wwassignment", "view all", "index.php?id=$course->id", "");
-    $wwCourseName = _wwassignment_courseIdToShortName($course->id);
-  
-    
+require_once ("$CFG->dirroot/mod/wwassignment/lib.php");
+define('WWASSIGNMENT_WEBWORK_URL', $CFG->wwassignment_webworkurl);
+
+require_login($course->id);
+
+add_to_log($course->id, "wwassignment", "view all", "index.php?id=$course->id", "");
+$wwCourseName = _wwassignment_courseIdToShortName($course->id);
+
 /// Get all required strings
+$strwwassignments = get_string("modulenameplural", "wwassignment");
+$strwwassignment  = get_string("modulename", "wwassignment");
 
-    $strwwassignments = get_string("modulenameplural", "wwassignment");
-    $strwwassignment  = get_string("modulename", "wwassignment");
+// ensure that there is a bridge for this course
+_wwassignment_ensureBridgeExists($course->id);
 
 ?>
-<?php 
-// ensure that there is a bridge for this course:
-//    error_log("form ");
-//    error_log(print_r($form,true));
-// 	$oCourse = get_record("course", "id", $form->course);
-// 	error_log(print_r($oCourse->id, true));
-	$record = get_record("wwassignment_bridge", "course",$form->course);
-// 	error_log("aMods");
-// 	error_log(count($record));
-// 	error_log(print_r($record, true));
-?> 
 
-	
 <?php
-	if ($record) {
-		print "This course is already prepared to connect to the webwork course $wwCourseName.";
-	} else {
-		print "This course will be connected to $wwCourseName.";
-	}
-	if (isadmin()) {
-		print("<p style='font-size: smaller; color: #aaa; text-align: center;'>
-		       <a style='color: black;text-decoration:underline' href='".WWASSIGNMENT_WEBWORK_URL."/admin/?subDisplay=add_course&add_courseID=$wwCourseName&dbLayout=sql_moodle'>"."Create WeBWorK course"."</a></p>");
-	        
-	}
+
+if (isadmin() || isteacher($course->id)) {
+	print "<p style='font-size: smaller; text-align: center;'>";
+}
+if (isadmin()) {
+	print("<a href='".WWASSIGNMENT_WEBWORK_URL."/admin/?subDisplay=add_course&add_courseID=$wwCourseName&add_dbLayout=sql_moodle'>"."Create WeBWorK course"."</a>");
+		
+}
+if (isadmin() && isteacher($course->id)) {
+	print("<br/>");
+}
+if(isteacher($course->id)) {
+	print("<a href='".WWASSIGNMENT_WEBWORK_URL."/$course->shortname/instructor' target='_blank'>"
+	       .get_string("goToWeBWorK", "wwassignment")."</a>");
+}
+if (isadmin() || isteacher($course->id)) {
+	print "</p>";
+}
+
 ?>
+
 	<form name="form" method="post" action="mod.php">
 	<center>
 	<table cellpadding="5">
 	<tr valign="top">
 		<td align="right"><label for='name'><b><?php  print_string("name") ?>:</b></label></td>
 		<td>
-			<input type="text" id='name' name="name" size="30" value="<?php  p($form->name) ?>">
+			<input type="text" id='name' name="name" size="30" value="<?php	 p($form->name) ?>">
 		</td>
 	</tr>
 	<!-- More rows go in here... -->
@@ -123,23 +152,16 @@ if( ! isset($form->gradingmethod) ) {
 	
 	</table>
 	<!-- These hidden variables are always the same -->
-	<input type="hidden" name='formaction'    value="create_assignment" />
-	<input type="hidden" name='course'        value="<?php  p($form->course) ?>" />
-	<input type="hidden" name="sesskey"       value="<?php  p($form->sesskey) ?>" />
-	<input type="hidden" name='coursemodule'  value="<?php  p($form->coursemodule) ?>" />
-	<input type="hidden" name='section'       value="<?php  p($form->section) ?>" />
-	<input type="hidden" name='module'        value="<?php  p($form->module) ?>" />
-	<input type="hidden" name='modulename'    value="<?php  p($form->modulename) ?>" />
-	<input type="hidden" name='instance'      value="<?php  p($form->instance) ?>" />
-	<input type="hidden" name='mode'          value="<?php  p($form->mode) ?>" />
+	<input type="hidden" name='formaction'	  value="create_assignment" />
+	<input type="hidden" name='course'		  value="<?php	p($form->course) ?>" />
+	<input type="hidden" name="sesskey"		  value="<?php	p($form->sesskey) ?>" />
+	<input type="hidden" name='coursemodule'  value="<?php	p($form->coursemodule) ?>" />
+	<input type="hidden" name='section'		  value="<?php	p($form->section) ?>" />
+	<input type="hidden" name='module'		  value="<?php	p($form->module) ?>" />
+	<input type="hidden" name='modulename'	  value="<?php	p($form->modulename) ?>" />
+	<input type="hidden" name='instance'	  value="<?php	p($form->instance) ?>" />
+	<input type="hidden" name='mode'		  value="<?php	p($form->mode) ?>" />
 	<input type="submit" value="<?php  print_string("savechanges") ?>" />
 	</center>
 	
 	</form>
-	<?php
-		if( isteacher($course->id) ) {
-			print("<p style='font-size: smaller; color: #aaa; text-align: center;'>
-			 <a style='color: #666;text-decoration:underline' href='".WWASSIGNMENT_WEBWORK_URL."/$course->shortname/instructor' target='_webwork_edit'>"
-			 .get_string("goToWeBWorK", "wwassignment")."</a></p>");
-		}
-	?>

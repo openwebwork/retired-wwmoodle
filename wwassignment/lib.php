@@ -1,5 +1,5 @@
 <?php
-// $Id: lib.php,v 1.6 2006-07-26 21:27:27 gage Exp $
+// $Id: lib.php,v 1.7 2006-08-14 19:34:14 sh002i Exp $
 //require_once("DB.php");
 function debug_log($obj) {
 	$fh = fopen("/home/gage/moodle_debug", "w");
@@ -109,21 +109,6 @@ function wwassignment_add_instance($wwassignment) {
 /// (defined by the form in mod.html) this function 
 /// will create a new instance and return the id number 
 /// of the new instance.
-	$record = get_record("wwassignment_bridge", "course",$wwassignment->course);    
-	if (! $record ) {  #add bridge entry
-		// check if bridge exists
-		$wwassignment_bridge->timemodified = time();
-        $wwassignment_bridge->course = $wwassignment->course;
-		$wwassignment_bridge->coursename = _wwassignment_courseIdToShortName($wwassignment->course);
-		$wwassignment_bridge->name = $wwassignment_bridge->coursename;
-		if (! isset($wwassignment_bridge->coursename) ){
-			 $wwassignment_bridge->coursename = "foo";
-		}
-// 		error_log("add entry to wwmoodle");
-// 		error_log(print_r($wwassignment, true));
-		$returnid = insert_record("wwassignment_bridge",$wwassignment_bridge);
-		error_log("inserting new entry to wwassignment_bridge id= $returnid");
-	} 
 	# create set
 	$aSetInfo = _wwrpc_getSetInfo($wwassignment->set_id, wwassignment_courseIdToShortName($wwassignment->course));
 	
@@ -490,6 +475,7 @@ function _wwrpc_getProblemsForUser($sUserName, $iSetId, $sCourseName) {
  	$res->free();
 	return $row;
 }
+
 ////////////////////////////////////////////////////////////////////////////////////
 // internal functions start with _wwassignment
 ///////////////////////////////////////////////////////////////////////////////////
@@ -563,7 +549,6 @@ function _wwassignment_courseIdToShortName($iCourseId) {
 	return $shortname;
 }
 
-
 /**
  * Returns a URL to the specified set.
  * @param int $iSetId The set ID to link to.
@@ -574,4 +559,25 @@ function _wwassignment_linkToSet($iSetId, $sCourseName) {
 	// TODO: Verify me.
 	return WWASSIGNMENT_WEBWORK_URL."/$sCourseName/$iSetId";
 }
+
+/**
+ * Checks for a wwassignment_bridge record for the given course, creates one if it does not exist.
+ * @param int $iCourseID The ID of the course.
+ * @return void
+ */
+function _wwassignment_ensureBridgeExists($iCourseID) {
+	$wwassignment_bridge = get_record("wwassignment_bridge", "course", $iCourseID);
+	if (!$wwassignment_bridge) {
+		$wwassignment_bridge->timemodified = time();
+		$wwassignment_bridge->course = $iCourseID;
+		$wwassignment_bridge->coursename = _wwassignment_courseIdToShortName($iCourseID);
+		$wwassignment_bridge->name = $wwassignment_bridge->coursename;
+		if (!isset($wwassignment_bridge->coursename)) {
+			$wwassignment_bridge->coursename = "foo";
+		}
+		$returnid = insert_record("wwassignment_bridge",$wwassignment_bridge);
+		error_log("inserting new entry to wwassignment_bridge id=$returnid");
+	} 
+}
+
 ?>
