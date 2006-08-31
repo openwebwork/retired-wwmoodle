@@ -1,5 +1,5 @@
 <?php
-// $Id: lib.php,v 1.7 2006-08-14 19:34:14 sh002i Exp $
+// $Id: lib.php,v 1.8 2006-08-31 01:30:13 gage Exp $
 //require_once("DB.php");
 function debug_log($obj) {
 	$fh = fopen("/home/gage/moodle_debug", "w");
@@ -186,8 +186,9 @@ function wwassignment_update_instance($wwassignment) {
 		} else {
 			delete_records('event', 'modulename', 'wwassignment', 'instance', $wwassignment->id);
 		}
-		return $returnid;
+		
 	}
+	return $returnid;
 
 }
 function wwassignment_delete_instance($id) {
