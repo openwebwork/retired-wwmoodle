@@ -1,5 +1,5 @@
 <?php
-// $Id: lib.php,v 1.8 2006-08-31 01:30:13 gage Exp $
+// $Id: lib.php,v 1.9 2006-11-22 17:18:07 gage Exp $
 //require_once("DB.php");
 function debug_log($obj) {
 	$fh = fopen("/home/gage/moodle_debug", "w");
@@ -61,7 +61,12 @@ define('WWASSIGNMENT_WEBWORK_DB', $CFG->wwmoodle_webwork_db);
 function wwassignment_gradeMethods() {
 
 	return array(
-		0 => array('name' => get_string("gradeSimple", "wwassignment"), 'formula' => '$fGrade += ($p[\'num_correct\'] > 0) ? 1 : 0;'),
+//		0 => array('name' => get_string("gradeSimple", "wwassignment"), 'formula' => '$fGrade += ($p[\'num_correct\'] > 0) ? 1 : 0;'),
+//      Use status instead of num_correct.  If an instructor marks a problem correct for everyone (changing the status) it
+//                 does not change the num_correct entry which remains 0 for students who haven't answered the problem "correctly"
+//                 What is wanted for the simple grading procedure is the status.  
+//      FIXME  The gradeDeductRetry method needs to be corrected in some way as well
+		0 => array('name' => get_string("gradeSimple", "wwassignment"), 'formula' => '$fGrade += ($p[\'status\'] > 0) ? 1 : 0;'),
 		1 => array('name' => get_string("gradeDeductRetry", "wwassignment"), 'formula' => '$fGrade += $p[\'num_correct\']/$p[\'attempted\'];'),
 	);
 
