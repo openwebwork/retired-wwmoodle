@@ -1,8 +1,9 @@
 <?php
-// $Id: view.php,v 1.1 2007-06-21 20:27:06 mleventi Exp $
+// $Id: view.php,v 1.2 2007-06-22 21:19:26 mleventi Exp $
 
 /// This page prints a particular instance of wwassignment
 /// (Replace wwassignment with the name of your module)
+
 
 require_once("../../config.php");
 require_once("lib.php");
