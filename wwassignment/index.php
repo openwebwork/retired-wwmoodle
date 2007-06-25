@@ -1,5 +1,5 @@
 <?php
-// $Id: index.php,v 1.2 2006-07-26 21:27:27 gage Exp $
+// $Id: index.php,v 1.3 2007-06-25 21:03:30 mleventi Exp $
 
 
 /// This page lists all the instances of wwassignment in a particular course
@@ -7,7 +7,6 @@
 
     require_once("../../config.php");
     require_once("lib.php");
-    
         $id = required_param('id', PARAM_INT);   // course
     
     if (! $course = get_record("course", "id", $id)) {
@@ -31,15 +30,13 @@
         $navigation = "<a href=\"../../course/view.php?id=$course->id\">$course->shortname</a> »";
     }
 
-print_header("$course->shortname: $strwwassignments", "$course->fullname", "$navigation $strwwassignments", "", "", true, "", navmenu($course));
+    print_header("$course->shortname: $strwwassignments", "$course->fullname", "$navigation $strwwassignments", "", "", true, "", navmenu($course));
 
 /// Get all the appropriate data
-
     if (! $wwassignments = get_all_instances_in_course("wwassignment", $course)) {
         notice("There are no $strwwassignments", "../../course/view.php?id=$course->id");
         die;
     }
-    
 /// Print the list of instances (your module will probably extend this)
     
     $timenow = time();
@@ -60,22 +57,26 @@ print_header("$course->shortname: $strwwassignments", "$course->fullname", "$nav
         $table->head  = array ($strname, $strOpenDate, $strDueDate);
         $table->align = array ("left", "left", "left", "left", "left");
     }
-    
+    $webworkclient = webwork_client::get_instance();
+    $webworkcourse = _wwassignment_mapped_course($COURSE->id,false);
     foreach ($wwassignments as $wwassignment) {
         // grab specific info for this set:
-        $aSetInfo = _wwrpc_getSetInfo($wwassignment->set_id, wwassignment_courseIdToShortName($course->id));
-        if (!$wwassignment->visible) {
-            //Show dimmed if the mod is hidden
-            $link = "<a class=\"dimmed\" href=\"view.php?id=$wwassignment->coursemodule\">$wwassignment->name</a>";
-        } else {
-            //Show normal if the mod is visible
-            $link = "<a href=\"view.php?id=$wwassignment->coursemodule\">$wwassignment->name</a>";
-        }
-    
-        if ($course->format == "weeks" or $course->format == "topics") {
-            $table->data[] = array ($wwassignment->section, $link, strftime("%c", $aSetInfo['open_date']), strftime("%c", $aSetInfo['due_date']));
-        } else {
-            $table->data[] = array ($link, strftime("%c", $aSetInfo['open_date']), strftime("%c", $aSetInfo['due_date']));
+        if(isset($wwassignment)) {
+            //var_dump($wwassignment);
+            $wwassignmentsetinfo = $webworkclient->get_assignment_data($webworkcourse,$wwassignment->webwork_set,false);
+            if (!$wwassignment->visible) {
+                //Show dimmed if the mod is hidden
+                $link = "<a class=\"dimmed\" href=\"view.php?id=$wwassignment->coursemodule\">$wwassignmentsetinfo->name</a>";
+            } else {
+                //Show normal if the mod is visible
+                $setinfoname=$wwassignmentsetinfo['name'];
+                $link = "<a href=\"view.php?id=$wwassignment->coursemodule\">$setinfoname</a>";
+            }
+            if ($course->format == "weeks" or $course->format == "topics") {
+                $table->data[] = array ($wwassignment->section, $link, strftime("%c", $wwassignmentsetinfo['open_date']), strftime("%c", $wwassignmentsetinfo['due_date']));
+            } else {
+                $table->data[] = array ($link, strftime("%c", $wwassignmentsetinfo->open_date), strftime("%c", $wwassignmentsetinfo->due_date));
+            }
         }
     }
     
@@ -83,10 +84,9 @@ print_header("$course->shortname: $strwwassignments", "$course->fullname", "$nav
     
     print_table($table);
     if( isteacher($course->id) ) {
-		print("<p style='font-size: smaller; color: #aaa; text-align: center;'><a style='color: #666;text-decoration:underline' href='".WWASSIGNMENT_WEBWORK_URL."/$course->shortname/instructor' target='_webwork_edit'>".get_string("goToWeBWorK", "wwassignment")."</a></p>");
-	}
+        print("<p style='font-size: smaller; color: #aaa; text-align: center;'><a style='color: #666;text-decoration:underline' href='".WWASSIGNMENT_WEBWORK_URL."/$course->shortname/instructor' target='_webwork_edit'>".get_string("goToWeBWorK", "wwassignment")."</a></p>");
+    }
 /// Finish the page
-
     print_footer($course);
 
 ?>

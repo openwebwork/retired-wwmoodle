@@ -1,231 +1,218 @@
 <?php
-// $Id: lib.php,v 1.9 2006-11-22 17:18:07 gage Exp $
-//require_once("DB.php");
-function debug_log($obj) {
-	$fh = fopen("/home/gage/moodle_debug", "w");
-	//fwrite($fh,  "wwmoodle\n");
-	$struct = print_r($obj, true);
-	fwrite($fh, $struct);
-	fwrite($fh, "\n");
-	fclose($fh);
-	//MEG
-}
-//MEG
-$path = ini_get('include_path');
-//debug_log($path);
-//ini_set('include_path', $path . ':/usr/local/lib/php/pear/DB');
-//ini_set('include_path', $path . 'lib/adodb');
-//require_once("PEAR.php");
-//require_once("DB.php");
-//require_once($CFG->libdir.'/adodb/adodb-pear.inc.php');
-//endMEG
+// $Id: lib.php,v 1.10 2007-06-25 21:03:30 mleventi Exp $
 
 
-
-//MEG  from old wwmoodle/lib.php
-/**
- * These defines exist simply for easy of referencing them in functions.
- */
-/**
- * The location of the webwork courses directory.
- * The user that this script executes as must have write access to this directory.
- * This must end in a /!
- */
-define('WWASSIGNMENT_WEBWORK_COURSES', $CFG->wwassignment_webworkcourses);
-/**
- * The URL of the WeBWorK install.
- */
 define('WWASSIGNMENT_WEBWORK_URL', $CFG->wwassignment_webworkurl);
-
-
-
-
-
-
-/// Library of functions and constants for module wwassignment
+define('WWASSIGNMENT_WEBWORK_WSDL', $CFG->wwassignment_rpc_wsdl);
+define('WWASSIGNMENT_WEBWORK_KEY',$CFG->wwassignment_rpc_key);
 
 /**
- * The URL of your WeBWorK installation.
- */
-define('WW_TABLE_PREFIX', 'webwork');
-define('WWASSIGNMENT_WEBWORK_URL', $CFG->wwassignment_webwork_url);
-/**
- * The PEAR::DB connection string to connect to the WeBWorK database.
- * This is in the form:
- * type://username:password@host/dbname
- * Where type is usually either 'mysql', 'mysqli', or 'pgsql'
- */
-define('WWASSIGNMENT_WEBWORK_DB', $CFG->wwmoodle_webwork_db);
-
-
-function wwassignment_gradeMethods() {
-
-	return array(
-//		0 => array('name' => get_string("gradeSimple", "wwassignment"), 'formula' => '$fGrade += ($p[\'num_correct\'] > 0) ? 1 : 0;'),
-//      Use status instead of num_correct.  If an instructor marks a problem correct for everyone (changing the status) it
-//                 does not change the num_correct entry which remains 0 for students who haven't answered the problem "correctly"
-//                 What is wanted for the simple grading procedure is the status.  
-//      FIXME  The gradeDeductRetry method needs to be corrected in some way as well
-		0 => array('name' => get_string("gradeSimple", "wwassignment"), 'formula' => '$fGrade += ($p[\'status\'] > 0) ? 1 : 0;'),
-		1 => array('name' => get_string("gradeDeductRetry", "wwassignment"), 'formula' => '$fGrade += $p[\'num_correct\']/$p[\'attempted\'];'),
-	);
-
+* @desc Creates an auto_login link to the URL of the webwork problem set pointed to by wwassignmentid for the current user. (will force set creation if necessary)
+* @param string $wwassignmentid The Moodle ID of the wwassignment.
+* @return URL to the assignment.
+*/
+function wwassignment_view_link($wwassignmentid) {
+    global $COURSE,$USER;
+    
+    $webworkclient = webwork_client::get_instance();
+    $webworkcourse = _wwassignment_mapped_course($COURSE->id,false);
+    $webworkset = _wwassignment_mapped_set($wwassignmentid,false);
+    $webworkuser = $webworkclient->mapped_user($webworkcourse,$USER->username);
+    if($webworkuser == -1) {
+        error_log(get_string("user_not_mapped","wwassignment"));
+        $newuser = $webworkclient->create_user($webworkcourse,$USER);
+        $webworkuser = $webworkclient->mapped_user($webworkcourse,$USER->username,false); 
+    }
+    
+    $webworksetuser = $webworkclient->mapped_user_set($webworkcourse,$webworkuser,$webworkset);
+    if($webworksetuser == -1) {
+        error_log(get_string("set_user_not_mapped","wwassignment"));
+        //try and do it now
+        $newsetuser = $webworkclient->create_user_set($webworkcourse,$webworkuser,$webworkset);
+        //AGAIN FOR GOOD MEASURE
+        $webworksetuser = $webworkclient->mapped_set_user($webworkcourse,$webworkuser,$webworkset,false);
+    }
+    
+    $key = $webworkclient->login_user($webworkcourse,$webworkuser,false);
+    
+    return _wwassignment_link_to_set_auto_login($webworkcourse,$webworkset,$webworkuser,$key);   
 }
 
 /**
- * Prints out a select box allowing a teacher to select how WeBWorK grades will be calculated.
- * @param int $iGradeMethod The current grade method.
- * @return void
- */
-function wwassignment_printGradeMethodSelect($iGradeMethod='-1') {
-    // debug_log("printGrademethodSelect called");
-	$wwassignment_gradeMethods = wwassignment_gradeMethods();
-	print("<select id='gradingmethod' name='gradingmethod'>\n");
-	foreach( $wwassignment_gradeMethods as $k=>$g ) {
-		print("\t<option value='$k'");
-		if( $k == $iGradeMethod ) {
-			print(" selected='selected'");
-		}
-		print(">$g[name]</option>\n");
-	}
+* @desc Creates an auto_login link to the URL for editing the problem set associated with $wwassignmentid.
+* @param string $wwassignmentid The assignment id.
+* @return URL The URL.
+*/
+function wwassignment_edit_set_link($wwassignmentid) {
+    global $COURSE,$USER;
+    $webworkclient = webwork_client::get_instance();
+    
+    //IS THE COURSE MAPPED?
+    $webworkcourse = _wwassignment_mapped_course($COURSE->id,false);
+    //IS THE SET MAPPED?
+    $webworkset = _wwassignment_mapped_set($wwassignmentid,false);
+    //IS THE USER MAPPED?
+    $webworkuser = $webworkclient->mapped_user($webworkcourse,$USER->username);
+    if($webworkuser == -1) {
+        //USER WAS NOT FOUND, wasnt mapped
+        error_log(get_string("user_not_mapped","wwassignment"));
+        //try and create a teacher
+        $newuser = $webworkclient->create_user($webworkcourse,$USER,"10");
+        //AGAIN FOR GOOD MEASURE
+        $webworkuser = $webworkclient->mapped_user($webworkcourse,$USER->username,false);
+    }
+    $key = $webworkclient->login_user($webworkcourse,$webworkuser,false);
+    return _wwassignment_link_to_edit_set_auto_login($webworkcourse,$webworkset,$webworkuser,$key);
 }
-
-
-
 
 /**
- * Maps a course ID number to it's (sanatized) shortname.
- * @param int $iCourseID The ID of the course.
- * @return string The shortname of the course, with unsafe characters removed. If the courseID is not found, null is returned.
- */
-function wwassignment_courseIdToShortName($iCourseId) {
-	$c = get_record('course', 'id', $iCourseId);
-	if( ! $c ) {
-		return null;
-	}
-	$shortname = preg_replace("/[^a-zA-Z0-9]/", "", $c->shortname);
-	return $shortname;
+* @desc Creates an auto_login link to the URL of the instructor page for the webwork course associated with the current course.
+* @return URL The URL.
+*/
+function wwassignment_instructor_page_link() {
+    global $COURSE,$USER;
+    $webworkclient = webwork_client::get_instance();
+    
+    $webworkcourse = _wwassignment_mapped_course($COURSE->id,false);
+    //IS THE USER MAPPED?
+    $webworkuser = $webworkclient->mapped_user($webworkcourse,$USER->username);
+    if($webworkuser == -1) {
+        //USER WAS NOT FOUND, wasnt mapped
+        error_log(get_string("user_not_mapped","wwassignment"));
+        //try and create a teacher
+        $newuser = $webworkclient->create_user($webworkcourse,$USER,"10");
+        //AGAIN FOR GOOD MEASURE
+        $webworkuser = $webworkclient->mapped_user($webworkcourse,$USER->username,false); 
+    }
+    $key = $webworkclient->login_user($webworkcourse,$webworkuser,false);
+    
+    return _wwassignment_link_to_instructor_auto_login($webworkcourse,$webworkuser,$key);
 }
 
-
-
+/**
+* @desc On the first instance in a course this will add the Moodle/WeBWorK tie. Otherwise it will create a new Moodle assignment <-> Webwork problem set tie.
+*/
 function wwassignment_add_instance($wwassignment) {
-/// Given an object containing all the necessary data, 
-/// (defined by the form in mod.html) this function 
-/// will create a new instance and return the id number 
-/// of the new instance.
-	# create set
-	$aSetInfo = _wwrpc_getSetInfo($wwassignment->set_id, wwassignment_courseIdToShortName($wwassignment->course));
-	
-	$wwassignment->timemodified = time();
-	$wwassignment->id = $wwassignment->instance;
-	$wwassignment->timedue = $aSetInfo['due_date'];
-	$wwassignment->timeavailable = $aSetInfo['open_date'];
-	error_log("add wwassignment record");
-//	error_log(print_r($wwassignment, true));
-	if ($returnid = insert_record("wwassignment", $wwassignment)) {
-		if ($wwassignment->timedue) {
-			$event = NULL;
-			$event->name        = $wwassignment->name;
-			$event->description = $wwassignment->description;
-			$event->courseid    = $wwassignment->course;
-			$event->groupid     = 0;
-			$event->userid      = 0;
-			$event->modulename  = 'wwassignment';
-			$event->instance    = $returnid;
-			$event->eventtype   = 'due';
-			$event->timestart   = $wwassignment->timedue;
-			$event->timeduration = 0;
-			if (! add_event($event) ){ 
-				error_log("wwassignment event not created when adding instance!");
-			}
-		}
-	}
-	
-	return $returnid;
+    global $COURSE,$SESSION;
+    
+    
+    if(isset($wwassignment->webwork_course)) {
+        //Attaching Moodle Course to WeBWorK Course
+        if($wwassignment->webwork_course =="create") {
+            print_error("Creation is not yet supported.");
+        }
+        error_log("adding wwassignment_bridge record");
+        $wwassignment->course = $COURSE->id;
+        $returnid = insert_record("wwassignment_bridge",$wwassignment);
+        $wwassignment->webwork_set = "undefined";
+        $returnid = insert_record("wwassignment",$wwassignment);
+        //die(var_dump(($returnid)));
+        //ENROLL ALL STUDENTS IN MY COURSE 
+        return $returnid;
+    }
+    if(isset($wwassignment->webwork_set)) {
+        $webworkclient = webwork_client::get_instance();
+        if($wwassignment->webwork_set =="create") {
+            print_error("Creation is not yet supported.");
+        }
+        $webworkcourse = _wwassignment_mapped_course($COURSE->id);
+        $webworksetdata = $webworkclient->get_assignment_data($webworkcourse,$wwassignment->webwork_set,false);
+        //Attaching Moodle Set to WeBWorK Set
+        error_log("adding wwassignment record");
+        $wwassignment->course = $COURSE->id;
+        $wwassignment->name = get_string("set_name","wwassignment") . " " . $webworksetdata['set_id'];
+        $returnid = insert_record("wwassignment",$wwassignment);
+        //GET TIMEDUE INFO AND ADD AN EVENT
+       
+        if(isset($webworksetdata)) {
+            $event = NULL;
+            $event->name = get_string("set_name","wwassignment") . " " . $webworksetdata['set_id'];
+            $event->description = "";
+            $event->courseid = $COURSE->id;
+            $event->groupid = 0;
+            $event->userod = 0;
+            $event->modulename = 'wwassignment';
+            $event->instance = $returnid;
+            $event->eventtype = 'due';
+            $event->timestart = $webworksetdata['due_date'];
+            $event->timeduration = 0;
+            if(!add_event($event)) {
+                error_log(get_string("event_creation_error","wwassignment"));
+            }
+        }
+    }
+    return $returnid;
 }
 
-
+/**
+* @desc Updates and resynchronizes all information related to the a moodle assignment <-> webwork problem set tie.
+*/
 function wwassignment_update_instance($wwassignment) {
-/// Given an object containing all the necessary data, 
-/// (defined by the form in mod.html) this function 
-/// will update an existing instance with new data.
-    $aSetInfo = _wwrpc_getSetInfo($wwassignment->set_id, wwassignment_courseIdToShortName($wwassignment->course));
-
-	$wwassignment->timemodified = time();
-	$wwassignment->id = $wwassignment->instance;
-	$wwassignment->timedue = $aSetInfo['due_date'];
-	$wwassignment->timeavailable = $aSetInfo['open_date'];
-
-    error_log("updating wwassignment record");
-    error_log(print_r($wwassignment, true));
-	if ($returnid = update_record("wwassignment", $wwassignment)) {
-		if ($wwassignment->timedue) {
-			$event = NULL;
-	
-			if ($event->id = get_field('event', 'id', 'modulename', 'wwassignment', 'instance', $wwassignment->id)) {
-	
-				$event->name        = $wwassignment->name;
-				$event->description = $wwassignment->description;
-				$event->timestart   = $wwassignment->timedue;
-				
-				$rs = update_event($event) ;
-				
-				error_log("updating the event".$rs);
-				error_log(print_r($event,true));
-	
-			} else {
-				$event = NULL;
-				$event->name        = $wwassignment->name;
-				$event->description = $wwassignment->description;
-				$event->courseid    = $wwassignment->course;
-				$event->groupid     = 0;
-				$event->userid      = 0;
-				$event->modulename  = 'wwassignment';
-				$event->instance    = $wwassignment->id;
-				$event->eventtype   = 'due';
-				$event->timestart   = $wwassignment->timedue;
-				$event->timeduration = 0;
-				add_event($event);
-			}
-		} else {
-			delete_records('event', 'modulename', 'wwassignment', 'instance', $wwassignment->id);
-		}
-		
-	}
-	return $returnid;
-
+    global $COURSE;
+    $webworkclient = webwork_client::get_instance();
+    $webworkcourse = _wwassignment_mapped_course($COURSE->id);
+    $webworkset = _wwassignment_mapped_set($wwassignment->instance,false);
+    $webworksetdata = $webworkclient->get_assignment_data($webworkcourse,$webworkset,false);
+    if(isset($webworksetdata)) {
+        $wwassignment->name = get_string("set_name","wwassignment") . " " . $webworksetdata['set_id'];
+        if($returnid = update_record("wwassignment",$wwassignment)) {
+            $event = NULL;
+            if($event->id = get_field('event','id','modulename','wwassignment','instance',$wwassignment->id)) {
+                $event->name = get_string("set_name","wwassignment") . " " . $webworksetdata['set_id'];
+                $event->timestart = $webworksetdata['due_date'];
+                $rs = update_event($event);
+                error_log("updating the event".$rs);
+            } else {
+                $event = NULL;
+                $event->name        = get_string("set_name","wwassignment") . " " . $webworksetdata['set_id'];
+                $event->description = "";
+                $event->courseid    = $COURSE->id;
+                $event->groupid     = 0;
+                $event->userid      = 0;
+                $event->modulename  = 'wwassignment';
+                $event->instance    = $wwassignment->id;
+                $event->eventtype   = 'due';
+                $event->timestart   = $webworksetdata['due_date'];
+                $event->timeduration = 0;
+                add_event($event);
+            }
+        }
+    
+    }
+    return $returnid;
 }
+
+/**
+* @desc Deletes a tie in Moodle. Deletes nothing in webwork.
+*/
 function wwassignment_delete_instance($id) {
-/// Given an ID of an instance of this module, 
-/// this function will permanently delete the instance 
-/// and any data that depends on it.  
+    
     $result = true;
-	if (! $wwassignment = get_record("wwassignment", "id", "$id")) {
-		return false;
-	}
+    if (! $wwassignment = get_record("wwassignment", "id", "$id")) {
+        return false;
+    }
 
-	# Delete any dependent records here #
+    # Delete any dependent records here #
 
-	if (! delete_records("wwassignment", "id", $wwassignment->id)) {
-		$result = false;
-	}
+    if (! delete_records("wwassignment", "id", $wwassignment->id)) {
+        $result = false;
+    }
 
-	if (! delete_records('event', 'modulename', 'wwassignment', 'instance', $wwassignment->id)) {
-		$result = false;
-	}
-	
-	// Get the cm id to properly clean up the grade_items for this assignment
-	// bug 4976
-	if (! $cm = get_record('modules', 'name', 'wwassignment')) {
-		$result = false;
-	} else {
-		if (! delete_records('grade_item', 'modid', $cm->id, 'cminstance', $wwassignment->id)) {
-			$result = false;
-		}
-	}
+    if (! delete_records('event', 'modulename', 'wwassignment', 'instance', $wwassignment->id)) {
+        $result = false;
+    }
+    
+    // Get the cm id to properly clean up the grade_items for this assignment
+    // bug 4976
+    if (! $cm = get_record('modules', 'name', 'wwassignment')) {
+        $result = false;
+    } else {
+        if (! delete_records('grade_item', 'modid', $cm->id, 'cminstance', $wwassignment->id)) {
+            $result = false;
+        }
+    }
 
-	return $result;
+    return $result;
 }
 
 function wwassignment_user_outline($course, $user, $mod, $wwassignment) {
@@ -234,19 +221,19 @@ function wwassignment_user_outline($course, $user, $mod, $wwassignment) {
 /// Used for user activity reports.
 /// $return->time = the time they did it
 /// $return->info = a short text description
-	$aLogs = get_logs("l.userid=$user AND l.course=$course AND l.cmid={$wwassignment->id}");
-	if( count($aLogs) > 0 ) {
-		$return->time = $aLogs[0]->time;
-		$return->info = $aLogs[0]->info;
-	}
-	return $return;
+    $aLogs = get_logs("l.userid=$user AND l.course=$course AND l.cmid={$wwassignment->id}");
+    if( count($aLogs) > 0 ) {
+        $return->time = $aLogs[0]->time;
+        $return->info = $aLogs[0]->info;
+    }
+    return $return;
 }
 
 function wwassignment_user_complete($course, $user, $mod, $wwassignment) {
 /// Print a detailed representation of what a  user has done with 
 /// a given particular instance of this module, for user activity reports.
-	
-	return true;
+    
+    return true;
 }
 
 function wwassignment_print_recent_activity($course, $isteacher, $timestart) {
@@ -254,9 +241,9 @@ function wwassignment_print_recent_activity($course, $isteacher, $timestart) {
 /// that has occurred in wwassignment activities and print it out. 
 /// Return true if there was output, or false is there was none.
 
-		global $CFG;
+        global $CFG;
 
-		return false;  //  True if anything was printed, otherwise false 
+        return false;  //  True if anything was printed, otherwise false 
 }
 
 function wwassignment_cron () {
@@ -264,9 +251,9 @@ function wwassignment_cron () {
 /// This function searches for things that need to be done, such 
 /// as sending out mail, toggling flags etc ... 
 
-		global $CFG;
+        global $CFG;
 
-		return true;
+        return true;
 }
 
 function wwassignment_grades($wwassignmentid) {
@@ -277,81 +264,63 @@ function wwassignment_grades($wwassignmentid) {
 ///    $return->maxgrade = maximum allowed grade;
 ///
 ///    return $return;
-	// here's how we compute the grade:
-	// NOTE: each set has P problems in it.
-	// NOTE: each problem may be attempted M times.
-	// NOTE: each problem has been attempted A times (by a given user).
-	// NOTE: each problem was gotten correct C times (by a given user).
-	// NOTE: each problem was gotten incorrect I times (by a given user).
-	// Thus, a users grade is: sigma(over P) C/A
-	// And the max score is P
-	// Alternately, code is provided for:
-	// sigma(over P) { if( C > 0) 1 else 0 }
-	// again with a max of P
-	
-	// redefine it here, 'cause for some reason we can't global it...
+    // here's how we compute the grade:
+    // NOTE: each set has P problems in it.
+    // NOTE: each problem may be attempted M times.
+    // NOTE: each problem has been attempted A times (by a given user).
+    // NOTE: each problem was gotten correct C times (by a given user).
+    // NOTE: each problem was gotten incorrect I times (by a given user).
+    // Thus, a users grade is: sigma(over P) C/A
+    // And the max score is P
+    // Alternately, code is provided for:
+    // sigma(over P) { if( C > 0) 1 else 0 }
+    // again with a max of P
+    
+    // redefine it here, 'cause for some reason we can't global it...
     //debug_log("start grades ".$wwassignmentid);
-	$wwassignment_gradeMethods = wwassignment_gradeMethods();
-	
-	$oGrades->grades = array();
-	$aGrades->maxgrade = 0;
-	
-	$oMod = get_record("wwassignment", "id", $wwassignmentid);
-	if( ! $oMod ) {
-		return NULL;
-	}
-	//debug_log("record ".print_r($oMod,true));
-	$gradeFormula = $wwassignment_gradeMethods[$oMod->gradingmethod]['formula'];
-	//debug_log("formula ".print_r($gradeFormula, true));
-	if( empty($gradeFormula) ) {
-		return NULL;
-	}
-	
-	$sCourseName = wwassignment_courseIdToShortName($oMod->course);
-	
-	// enumerate over the students in the course:
-	$aStudents = get_course_students($oMod->course);
- 	foreach( $aStudents as $s ) {
- 		$aProblems = _wwrpc_getProblemsForUser($s->username, $oMod->set_id, $sCourseName);
- 		$fGrade = 0.0;
-		foreach( $aProblems as $p ) {
-		    //debug_log("student".$s->username." set ".$oMod->set_id." score ". $p['num_correct']);
-			eval($gradeFormula);
-		}
-		$oGrades->grades[$s->id] = $fGrade;
- 	}
-	$oGrades->maxgrade = _wwrpc_getMaxSetGrade($oMod->set_id, $sCourseName);
-	debug_log("all grades".print_r($oGrades, true));
-	return $oGrades;
+    global $COURSE;
+    $webworkclient = webwork_client::get_instance();
+    $studentgrades->grades = array();
+    $studentgrades->maxgrade = 0;
+        //debug_log("record ".print_r($oMod,true));
+    $gradeformula = '$finalgrade += ($problem->status > 0) ? 1 : 0;';
+    //debug_log("formula ".print_r($gradeFormula, true));
+    $webworkcourse = _wwassignment_mapped_course($COURSE->id,false);
+    $webworkset = _wwassignment_mapped_set($wwassignmentid,false);
+    
+    // enumerate over the students in the course:
+    $students = get_course_students($COURSE->id);
+    
+     foreach( $students as $student ) {
+        $webworkuser = $webworkclient->mapped_user($webworkcourse,$student->username,false);
+        $webworkuserset =$webworkclient->mapped_user_set($webworkcourse,$webworkuser,$webworkset,false);
+         $studentproblems = $webworkclient->get_user_problems($webworkcourse,$webworkuser,$webworkset);
+         $finalgrade = 0.0;
+        foreach( $studentproblems as $problem ) {
+            $finalgrade += $problem->status;
+        }       
+        $studentgrades->grades[$student->id] = $finalgrade;
+     }
+    
+    $studentgrades->maxgrade = $webworkclient->get_max_grade($webworkcourse,$webworkset);
+    //error_log("all grades".print_r($studentgrades, true));
+    
+    return $studentgrades;
 }
 
+/**
+* @desc Finds all the participants in the course
+* @param string $wwassignmentid The Moodle wwassignment ID.
+* @return array An array of course users (IDs).
+*/
 function wwassignment_get_participants($wwassignmentid) {
-//Must return an array of user records (all data) who are participants
-//for a given instance of wwassignment. Must include every user involved
-//in the instance, independient of his role (student, teacher, admin...)
-//See other modules as example.
-	$oMod = get_record("wwassignment", "id", $wwassignmentid);
-	if( ! $oMod ) {
-		return array();
-	}
-	return get_course_users($oMod->course);
+    $wwassignment = get_record("wwassignment", "id", $wwassignmentid);
+    if(!isset($wwassignment)) {
+        return array();
+    }
+    return get_course_users($wwassignment->course);
 }
 
-function wwassignment_scale_used ($wwassignmentid,$scaleid) {
-//This function returns if a scale is being used by one wwassignment
-//it it has support for grading and scales. Commented code should be
-//modified if necessary. See forum, glossary or journal modules
-//as reference.
-	 
-	$return = false;
-
-	$rec = get_record("wwassignment","id","$wwassignmentid","scale","-$scaleid");
-	
-	if (!empty($rec)  && !empty($scaleid)) {
-		$return = true;
-	}
-	return $return;
-}
 function wwassignment_refresh_events($courseid = 0) {
     error_log("wwassignment_refresh_events called");
     if ($courseid == 0) {
@@ -392,198 +361,381 @@ function wwassignment_refresh_events($courseid = 0) {
 
 
 ////////////////////////////////////////////////////////////////////////////////////
-// calls to WeBWorK database start with _wwrpc_
-///////////////////////////////////////////////////////////////////////////////////
-
-/**
- * Gets information about the specified set.
- * @param int $iSetId The id of the set.
- * @param $sCourseName The name of this course
- * @return array Information about the set.
- */
-function _wwrpc_getSetInfo($iSetId, $sCourseName) {
-	global $db, $CFG;
-	$qry = "SELECT * FROM ". WW_TABLE_PREFIX.".{$sCourseName}_set WHERE set_id=?";
-    //error_log("get info for set $iSetID and $sCourseName");
-	if (!$res = $db->query($qry, array($iSetId))) {
-        if (isset($CFG->debug) and $CFG->debug > 7) {
-            notify($db->ErrorMsg() .'<br /><br />'. $sql);
-        }
-        if (!empty($CFG->dblogerror)) {
-            $debug=array_shift(debug_backtrace());
-            error_log("SQL ".$db->ErrorMsg()." in {$debug['file']} on line {$debug['line']}. STATEMENT:  $sql");
-        }
-        return false;
-    }
-	$row = $res->fetchRow();
-	if( ! $row ) {
-		return array('set_id' => $iSetId, 'set_header' => "Unable to get information for this set.", 'hardcopy_header' => "Unable to get information for this set.", 'open_date'=>time(), 'due_date'=>time(), 'answer_date'=>time(), 'published'=>time());
-	}
-	$res->free();
-	//error_log("result from getSetInfo");
-	return $row;
-}
-
-/**
- * Gets the max grade for a given problem set.
- * Essentially, this is just the number of problems in the set.
- * @param int $iSetId The id of the set.
- * @param string $sCourseName The name of this course.
- * @return int
- */
-function _wwrpc_getMaxSetGrade($iSetId, $sCourseName) {
-	global $db, $CFG;
-
-
-	$qry = "SELECT COUNT(*) FROM ". WW_TABLE_PREFIX.".{$sCourseName}_problem WHERE set_id=?";
-	if (!$res = $db->query($qry, array($iSetId))) {
-        if (isset($CFG->debug) and $CFG->debug > 7) {
-            notify($db->ErrorMsg() .'<br /><br />'. $sql);
-        }
-        if (!empty($CFG->dblogerror)) {
-            $debug=array_shift(debug_backtrace());
-            error_log("SQL ".$db->ErrorMsg()." in {$debug['file']} on line {$debug['line']}. STATEMENT:  $sql");
-        }
-        return false;
-    }
-	$row = $res->fetchRow();
-	$res->free();
-	return $row ? $row['COUNT(*)'] : -1;
-}
-
-/**
- * Gets the results of all the problems in the given set for the given user.
- * @param string $sUserName The name of the user to check for.
- * @param int $iSetId The id of the set to check for.
- * @param string $sCourseName The name of this course.
- * @return array An array of the results of all the problems for this user.
- */
-function _wwrpc_getProblemsForUser($sUserName, $iSetId, $sCourseName) {
-	// debug_log("start getProblemsForUser");
-    global $db, $CFG;
- 	$qry = "SELECT * FROM ". WW_TABLE_PREFIX.".{$sCourseName}_problem_user WHERE user_id=? AND set_id=? ORDER BY problem_id";
-	if (!$res = $db->query($qry, array($sUserName, $iSetId))) {
-        if (isset($CFG->debug) and $CFG->debug > 7) {
-            notify($db->ErrorMsg() .'<br /><br />'. $sql);
-        }
-        if (!empty($CFG->dblogerror)) {
-            $debug=array_shift(debug_backtrace());
-            error_log("SQL ".$db->ErrorMsg()." in {$debug['file']} on line {$debug['line']}. STATEMENT:  $sql");
-        }
-        return false;
-    }
- 	$row = $res->getArray();
- 	!$row ? $row = array() : $row = $row;
- 	
- 	//debug_log("row for $sUserName $iSetID");
- 	//debug_log(print_r($row,true));
- 	
- 	$res->free();
-	return $row;
-}
-
-////////////////////////////////////////////////////////////////////////////////////
 // internal functions start with _wwassignment
 ///////////////////////////////////////////////////////////////////////////////////
 
+
+////////////////////////////////////////////////////////////////
+//functions that check mapping existance in the local db
+////////////////////////////////////////////////////////////////
+
 /**
- * Prints an HTML select widget allowing for selection of any of the sets defined
- * for this course in WeBWorK.
- * @pre There is a WeBWorK course for this course.
- * @param int $iCourseId The id of this course.
- * @param int $iSetId The set id to have selected.
- * @return void
- */
-function _wwassignment_printSetSelect($iCourseId, $iSetId=-1) {
-	global $db, $CFG;
-	// debug_log("starting printSetSelect");
-	$sCourseName = wwassignment_courseIdToShortName($iCourseId);
-	if( is_null($sCourseName) ) {
-		print("<b>Unable to find the name of this course.</b>\n");
-		return;
-	}
-	
-	// now get a list of all sets for this course:
-	$qry = "SELECT * FROM ". WW_TABLE_PREFIX.".{$sCourseName}_set ORDER BY open_date DESC";
-	if (!$res = $db->query($qry)) {
-        if (isset($CFG->debug) and $CFG->debug > 7) {
-            notify($db->ErrorMsg() .'<br /><br />'. $sql);
-        }
-        if (!empty($CFG->dblogerror)) {
-            $debug=array_shift(debug_backtrace());
-            error_log("SQL ".$db->ErrorMsg()." in {$debug['file']} on line {$debug['line']}. STATEMENT:  $sql");
-        }
-        return false;
+* @desc Finds the webwork course name from a moodle course id.
+* @param integer $courseid Moodle Course ID.
+* @param integer $silent whether to trigger an error message.
+* @return string the name of the webwork course on success and -1 on failure.
+*/
+function _wwassignment_mapped_course($courseid,$silent = true) {
+    $wwassignmentbridge = get_record('wwassignment_bridge','course', $courseid);
+    if((isset($wwassignmentbridge)) && (isset($wwassignmentbridge->webwork_course))) {
+        return $wwassignmentbridge->webwork_course;
     }
-	$aSets = array();
-	// debug_log("got sets");
- 	while( $row = $res->fetchRow() ) {
- 		$aSets[] = $row['set_id'];
- 	}
-	$res->free();
-	
-	
-	// now print the option box, if we have any to print:
-	if( count($aSets) < 1 ) {
-		print("<b>No sets exist for this course. Please create one via <a href='" . WWASSIGNMENT_WEBWORK_URL . "/$sCourseName'>WeBWorK</a>.</b>\n");
-		return;
-	}
-	print("<select id='set_id' name='set_id'>\n");
-	foreach( $aSets as $s ) {
-		print("<option value='");
-		p($s);
-		print("'");
-		if( $s == $iSetId ) {
-			print("selected='selected'");
-		}
-		print(">$s</option>\n");
-	}
-	print("</select>\n");
+    if(!$silent) {
+        print_error(get_string("webwork_map_failure","wwassignment") . " No WeBWorK course is mapped for this course.");
+    }
+    return -1;
 }
 
 /**
- * Maps a course ID number to it's (sanatized) shortname.
- * @param int $iCourseID The ID of the course.
- * @return string The shortname of the course, with unsafe characters removed. If the courseID is not found, null is returned.
- */
-function _wwassignment_courseIdToShortName($iCourseId) {
-	$c = get_record('course', 'id', $iCourseId);
-	if( ! $c ) {
-		return null;
-	}
-	$shortname = preg_replace("/[^a-zA-Z0-9]/", "", $c->shortname);
-	return $shortname;
+* @desc Finds the webwork set name from a wwassignment id.
+* @param integer $wwassignmentid Moodle wwassignment ID.
+* @param integer $silent whether to trigger an error message.
+* @return string the name of the webwork set on success and -1 on failure.
+*/
+function _wwassignment_mapped_set($wwassignmentid,$silent = true) {
+    $wwassignment = get_record('wwassignment','id',$wwassignmentid);
+    if((isset($wwassignment)) && (isset($wwassignment->webwork_set))) {
+        return $wwassignment->webwork_set;
+    }
+    if(!$silent) {
+        print_error(get_string("webwork_map_failure","wwassignment") . " No WeBWorK set is mapped for this set.");
+    }
+    return -1;
+}
+
+////////////////////////////////////////////////////////////////
+//functions that create links to the webwork site.
+////////////////////////////////////////////////////////////////
+
+/**
+* @desc Returns URL link to a webwork course logging the user in.
+* @param string $webworkcourse The webwork course.
+* @param string $webworkset The webwork set.
+* @param string $webworkuser The webwork user.
+* @param string $key The key used to login the user.
+* @return URL.
+*/
+function _wwassignment_link_to_edit_set_auto_login($webworkcourse,$webworkset,$username,$key) {
+    return _wwassignment_link_to_course($webworkcourse) . "instructor/sets/$webworkset/?effectiveUser=$username&user=$username&key=$key";
+}
+
+
+/**
+* @desc Returns URL link to a webwork course logging the user in.
+* @param string $webworkcourse The webwork course.
+* @param string $webworkuser The webwork user.
+* @param string $key The key used to login the user.
+* @return URL.
+*/
+function _wwassignment_link_to_instructor_auto_login($webworkcourse,$username,$key) {
+    return _wwassignment_link_to_course($webworkcourse) . "instructor/?effectiveUser=$username&user=$username&key=$key";
 }
 
 /**
- * Returns a URL to the specified set.
- * @param int $iSetId The set ID to link to.
- * @param string $sCourseName The name of this course.
- * @return string The URL to the specified set. This might be absolute, or relative. However, it is assured of working.
- */
-function _wwassignment_linkToSet($iSetId, $sCourseName) {
-	// TODO: Verify me.
-	return WWASSIGNMENT_WEBWORK_URL."/$sCourseName/$iSetId";
+* @desc Returns the URL link to a webwork course and a particular set logged in.
+* @param string $webworkcourse The webwork course.
+* @param string $webworkset The webwork set.
+* @param string $webworkuser The webwork user.
+* @param string $key The key used to login the user.
+* @return URL.
+*/
+function _wwassignment_link_to_set_auto_login($webworkcourse,$webworkset,$webworkuser,$key) {
+    return _wwassignment_link_to_set($webworkcourse,$webworkset) .  "?effectiveUser=$webworkuser&user=$webworkuser&key=$key";
 }
 
 /**
- * Checks for a wwassignment_bridge record for the given course, creates one if it does not exist.
- * @param int $iCourseID The ID of the course.
- * @return void
- */
-function _wwassignment_ensureBridgeExists($iCourseID) {
-	$wwassignment_bridge = get_record("wwassignment_bridge", "course", $iCourseID);
-	if (!$wwassignment_bridge) {
-		$wwassignment_bridge->timemodified = time();
-		$wwassignment_bridge->course = $iCourseID;
-		$wwassignment_bridge->coursename = _wwassignment_courseIdToShortName($iCourseID);
-		$wwassignment_bridge->name = $wwassignment_bridge->coursename;
-		if (!isset($wwassignment_bridge->coursename)) {
-			$wwassignment_bridge->coursename = "foo";
-		}
-		$returnid = insert_record("wwassignment_bridge",$wwassignment_bridge);
-		error_log("inserting new entry to wwassignment_bridge id=$returnid");
-	} 
+* @desc Returns the URL link to a webwork course and a particular set.
+* @param string $webworkcourse The webwork course.
+* @param string $webworkset The webwork set.
+* @return URL.
+*/
+function _wwassignment_link_to_set($webworkcourse,$webworkset) {
+    return _wwassignment_link_to_course($webworkcourse) . "$webworkset/";
 }
+
+/**
+* @desc Returns the URL link to a webwork course.
+* @param string $webworkcourse The webwork course.
+* @return URL.
+*/
+function _wwassignment_link_to_course($webworkcourse) {
+    return WWASSIGNMENT_WEBWORK_URL."/$webworkcourse/";
+}
+
+///////////////////////////////////////////////////////////////
+//webwork client class
+///////////////////////////////////////////////////////////////
+
+/**
+* @desc This singleton class acts as the gateway for all communication from the Moodle Client to the WeBWorK SOAP Server. It encapsulates an instance of a SoapClient.
+*/
+class webwork_client {
+        private $client;
+        private $defaultparams;
+        private $datacache;
+        private $mappingcache;
+        static private $instance;
+        
+        /**
+         * @desc Constructs a webwork_client.
+         */
+        private function __construct() {
+            $this->client = new SoapClient(WWASSIGNMENT_WEBWORK_WSDL);
+            $this->defaultparams = array(WWASSIGNMENT_WEBWORK_KEY);
+            $this->datacache = array(); 
+            $this->mappingcache = array();       
+                //Does a mapping exist for this course
+                /*$mapping = _wwassignment_course_mapped();
+                if($mapping != 0) {
+                        $this->defaultparams = array_push($this->defaultparams,$mapping);
+                }*/
+        }
+        /**
+        * @desc Retrieves the singleton instance of the webwork_client class.
+        * @return The instance of the class.
+        */
+        public function get_instance() {
+            if(self::$instance == NULL) {
+                self::$instance = new webwork_client();
+            }
+            return self::$instance;
+        }
+        
+        /**
+         *@desc Calls a SOAP function and passes (authenkey,course) automatically in the parameter list.
+         *@param string $functioncall The function to call
+         *@param array $params The parameters to the function.
+         *@param integer $override=false whether to override the default parameters that are passed to the soap function (authenKey).
+         *@return Result of the soap function.
+         */
+        private function handler($functioncall,$params=array(),$override=false) {
+                if(!is_array($params)) {
+                        $params = array($params);   
+                }
+                if(!$override) {
+                        $params = array_merge($this->defaultparams,$params);
+                }
+                try {
+                        return call_user_func_array(array(&$this->client,$functioncall),$params);
+                        
+                }
+                catch (SoapFault $exception) {
+                        print_error(get_string("rpc_fault","wwassignment") . " " . $functioncall. " ". $exception->faultstring);
+                }
+        }
+        
+        /**
+        * @desc Checks whether a user is in a webwork course.
+        * @param string $webworkcourse The webwork course name.
+        * @param string $webworkuser The webwork user name.
+        * @param integer $silent whether to trigger an error message
+        * @return string Returns the webwork user on success and -1 on failure.
+        */
+        public function mapped_user($webworkcourse,$webworkuser,$silent = true) {
+            if(isset($this->mappingcache[$webworkcourse]['user'][$webworkuser])) {
+                return $this->mappingcache[$webworkcourse]['user'][$webworkuser];
+            }
+            $record = $this->handler('get_user',array($webworkcourse,$webworkuser));
+            if(isset($record)) {
+                $this->mappingcache[$webworkcourse]['user'][$webworkuser] = $webworkuser;
+                return $webworkuser;
+            }
+            if(!$silent) {
+                print_error(get_string("webwork_map_failure","wwassignment") . "The user $webworkuser was not found in the webwork course $webworkcourse.");
+            }
+            return -1;
+        }
+        
+        /**
+        * @desc Checks whether a user has his own copy of a set built in a webwork course.
+        * @param string $webworkcourse The webwork course name.
+        * @param string $webworkuser The webwork user name.
+        * @param string $webworkset The webwork set name.
+        * @param integer $silent whether to trigger an error message
+        * @return integer Returns 1 on success and -1 on failure.
+        */
+        public function mapped_user_set($webworkcourse,$webworkuser,$webworkset,$silent = true) {
+            if(isset($this->mappingcache[$webworkcourse]['user_set'][$webworkuser][$webworkset])) {
+                return $this->mappingcache[$webworkcourse]['user_set'][$webworkuser][$webworkset];
+            }
+            $record = $this->handler("get_user_set",array($webworkcourse,$webworkuser,$webworkset));
+            if(isset($record)) {
+                $this->mappingcache[$webworkcourse]['user_set'][$webworkuser][$webworkset] = 1;
+                return 1;
+            }
+            
+            if(!$silent) {
+                print_error(get_string("webwork_map_failure","wwassignment") . "The user $webworkuser does not have copies of the set $webworkset in webwork course $webworkcourse.");
+            }
+            return -1;
+        }
+        
+        /**
+        * @desc Gets the record of the global set for a webwork course and set name.
+        * @param string $webworkcourse The webwork course name.
+        * @param string $webworkset The webwork set name.
+        * @param integer $silent whether to trigger an error message
+        * @return array Returns set information on success or -1 on failure.
+        */
+        public function get_assignment_data($webworkcourse,$webworkset,$silent = true) {
+            $record = $this->handler("get_global_set",array($webworkcourse,$webworkset));
+            if(isset($record)) {
+                $setinfo = array();
+                $setinfo['open_date'] = $record->open_date;
+                $setinfo['due_date'] = $record->due_date;
+                $setinfo['set_id'] = $record->set_id;
+                $setinfo['name'] = get_string("set_name","wwassignment") . " " . $record->set_id; 
+                return $setinfo;
+            }
+            if(!$silent) {
+                print_error(get_string("webwork_map_failure","wwassignment") . "The set $webworkset was not found  in webwork course $webworkcourse.");
+            }
+            return -1;
+            
+        }
+        
+        /**
+        * @desc Gets all the user problems for a specfic course, user and set. 
+        * @param string $webworkcourse The webwork course name.
+        * @param string $webworkuser The webwork users name.
+        * @param string $webworkset The webwork set name.
+        * @param integer $silent whether to trigger an error message
+        * @return array Returns an array of problems on success or -1 on failure.
+        */
+        public function get_user_problems($webworkcourse,$webworkuser,$webworkset,$silent = true) {
+            $record = $this->handler("get_all_user_problems",array($webworkcourse,$webworkuser,$webworkset));
+            if(isset($record)) {
+                return $record;
+            }
+            if(!$silent) {
+                print_error(get_string("webwork_map_failure","wwassignment") . "The user $webworkuser does not have copies of the set $webworkset in webwork course $webworkcourse.");
+            }
+            return -1;
+        }
+        
+        /**
+        * @desc Calculates the max grade on a set by counting the number of problems in the set. 
+        * @param string $webworkcourse The webwork course name.
+        * @param string $webworkset The webwork set name.
+        * @param integer $silent whether to trigger an error message
+        * @return integer The max grade on success or -1 on failure.
+        */
+        public function get_max_grade($webworkcourse,$webworkset,$silent = true) {
+            $record = $this->handler('list_global_problems',array($webworkcourse,$webworkset));
+            if(isset($record)) {
+                return count($record);
+            }
+            if(!$silent) {
+                print_error(get_string("webwork_map_failure","wwassignment") . "The set $webworkset does not exist in webwork course $webworkcourse.");
+            }
+            return -1;
+            
+        }
+        /**
+        * @desc Forces a login of a user into a course.
+        * @param string $webworkcourse The webwork course name.
+        * @param string $webworkuser The webwork users name.
+        * @param integer $silent whether to trigger an error message
+        * @return string The webwork key for URL on success or -1 on failure.
+        */
+        public function login_user($webworkcourse,$webworkuser,$silent = true) {
+            $key = $this->handler("login_user",array($webworkcourse,$webworkuser));
+            if(isset($key)) {
+                return $key;
+            }
+            if(!$silent) {
+                print_error(get_string("webwork_map_failure","wwassignment") . "The user $webworkuser cannot login to $webworkcourse.");
+            }
+            return -1;
+        }
+        
+        /**
+        * @desc Retrieves a list of sets from a webwork course and converts it into form options format.
+        * @param string $webworkcourse The webwork course name.
+        * @param integer $silent whether to trigger an error message
+        * @return array The form options.
+        */
+        public function options_set($webworkcourse,$silent = true) {
+            $setlist = $this->handler('list_global_sets',array($webworkcourse));
+            if(isset($setlist)) {
+                $setoptions = array();
+                foreach($setlist as $setid) {
+                    $setoptions[$setid] = $setid;
+                }
+                return $setoptions;
+            }
+            if(!$silent) {
+                print_error(get_string("webwork_map_failure","wwassignment") . "Could not get sets from the course $webworkcourse.");
+            }
+            return -1;          
+        }
+        
+        /**
+        * @desc Retrieves a list of courses from a webwork course and converts it into form options format.
+        * @param integer $silent whether to trigger an error message
+        * @return array The form options.
+        */
+        function options_course($silent = true) {
+            $courselist = $this->handler("list_courses");
+            if(isset($courselist)) {
+                $courseoptions = array();
+                foreach($courselist as $course) {
+                    $courseoptions[$course] = $course;
+                }
+                return $courseoptions; 
+            }
+            if(!$silent) {
+                print_error(get_string("webwork_map_failure","wwassignment") . "Could not get list of courses.");
+            }
+            return -1;
+   
+        }
+        
+        /**
+        * @desc Creates a user in the WeBWorK course.
+        * @param string $webworkcourse The webwork course name.
+        * @param array $userdata The user data to use in creation.
+        * @param string $permission The permissions of the new user, defaults to 0.
+        * @return Returns 1 on success.
+        */
+        public function create_user($webworkcourse,$userdata,$permission="0") {
+            //student ID switch
+            if($USER->student_id) {
+                $studentid = $USER->student_id;
+            } else {
+                $studentid = $userid;
+            }
+            //insert user record
+            $this->handler("add_user",array($webworkcourse,array(
+                "user_id" => $USER->username,
+                "first_name" => $USER->firstname,
+                "last_name" => $USER->lastname,
+                "email_address" => $USER->emailaddress,
+                "student_id" => $studentid,
+                "status" => "",
+                "section" => "",
+                "recitation" => "",
+                "comment" => "moodle created user")));
+            $this->handler("add_permission",array($webworkcourse,array(
+                "user_id" => $USER->username,
+                "permission" => $permission)));
+            $this->handler("add_password",array($webworkcourse,array(
+                "user_id" => $USER->username,
+                "password" => $studentid)));
+            return 1;
+        }
+        
+        /**
+        * @desc Creates a user set in WeBWorK
+        * @param string $webworkcourse The webwork course name.
+        * @param string $webworkuser The webwork user name.
+        * @param string $webworkset The webwork set name.
+        * @return Returns 1 on success.
+        */
+        public function create_user_set($webworkcourse,$webworkuser,$webworkset) {
+            $this->handler("create_user_set",array($webworkcourse,$webworkuser,$webworkset));
+            return 1;
+        }   
+};
 
 ?>

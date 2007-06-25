@@ -1,10 +1,17 @@
 <?php
-// $Id: lang.php,v 1.2 2006-06-27 23:21:41 gage Exp $
+// $Id: lang.php,v 1.3 2007-06-25 21:03:30 mleventi Exp $
 // language strings for wwmoodle_set
 // TODO: merge with proper language stuff
 
 $string['modulename'] = "WeBWorK Problem Set";
 $string['modulenameplural'] = "WeBWorK Problem Sets";
+
+
+//RPC
+$string['rpc_wsdl'] = "Path to the WSDL file on the host running WeBWorK.";
+$string['rpc_key'] = "Key identifying Moodle to WeBWorK.";
+$string['rpc_fault'] = "WeBWorK Failure:";
+
 
 $string['set_id'] = "Problem Set";
 $string['helpSet_id'] = "Problem Set?";
