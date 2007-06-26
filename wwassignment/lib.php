@@ -1,5 +1,5 @@
 <?php
-// $Id: lib.php,v 1.10 2007-06-25 21:03:30 mleventi Exp $
+// $Id: lib.php,v 1.11 2007-06-26 06:46:33 mleventi Exp $
 
 
 define('WWASSIGNMENT_WEBWORK_URL', $CFG->wwassignment_webworkurl);
@@ -20,7 +20,8 @@ function wwassignment_view_link($wwassignmentid) {
     $webworkuser = $webworkclient->mapped_user($webworkcourse,$USER->username);
     if($webworkuser == -1) {
         error_log(get_string("user_not_mapped","wwassignment"));
-        $newuser = $webworkclient->create_user($webworkcourse,$USER);
+        $tempuser = $USER;
+        $newuser = $webworkclient->create_user($webworkcourse,$tempuser);
         $webworkuser = $webworkclient->mapped_user($webworkcourse,$USER->username,false); 
     }
     
@@ -30,7 +31,7 @@ function wwassignment_view_link($wwassignmentid) {
         //try and do it now
         $newsetuser = $webworkclient->create_user_set($webworkcourse,$webworkuser,$webworkset);
         //AGAIN FOR GOOD MEASURE
-        $webworksetuser = $webworkclient->mapped_set_user($webworkcourse,$webworkuser,$webworkset,false);
+        $webworksetuser = $webworkclient->mapped_user_set($webworkcourse,$webworkuser,$webworkset,false);
     }
     
     $key = $webworkclient->login_user($webworkcourse,$webworkuser,false);
@@ -57,7 +58,8 @@ function wwassignment_edit_set_link($wwassignmentid) {
         //USER WAS NOT FOUND, wasnt mapped
         error_log(get_string("user_not_mapped","wwassignment"));
         //try and create a teacher
-        $newuser = $webworkclient->create_user($webworkcourse,$USER,"10");
+        $tempuser = $USER;
+        $newuser = $webworkclient->create_user($webworkcourse,$tempuser,"10");
         //AGAIN FOR GOOD MEASURE
         $webworkuser = $webworkclient->mapped_user($webworkcourse,$USER->username,false);
     }
@@ -80,7 +82,8 @@ function wwassignment_instructor_page_link() {
         //USER WAS NOT FOUND, wasnt mapped
         error_log(get_string("user_not_mapped","wwassignment"));
         //try and create a teacher
-        $newuser = $webworkclient->create_user($webworkcourse,$USER,"10");
+        $tempuser = $USER;
+        $newuser = $webworkclient->create_user($webworkcourse,$tempuser,"10");
         //AGAIN FOR GOOD MEASURE
         $webworkuser = $webworkclient->mapped_user($webworkcourse,$USER->username,false); 
     }
@@ -93,7 +96,7 @@ function wwassignment_instructor_page_link() {
 * @desc On the first instance in a course this will add the Moodle/WeBWorK tie. Otherwise it will create a new Moodle assignment <-> Webwork problem set tie.
 */
 function wwassignment_add_instance($wwassignment) {
-    global $COURSE,$SESSION;
+    global $COURSE,$SESSION,$USER;
     
     
     if(isset($wwassignment->webwork_course)) {
@@ -106,8 +109,10 @@ function wwassignment_add_instance($wwassignment) {
         $returnid = insert_record("wwassignment_bridge",$wwassignment);
         $wwassignment->webwork_set = "undefined";
         $returnid = insert_record("wwassignment",$wwassignment);
-        //die(var_dump(($returnid)));
-        //ENROLL ALL STUDENTS IN MY COURSE 
+        $webworkclient = webwork_client::get_instance();
+        if($webworkclient->mapped_user($wwassignment->webwork_course,$USER->username) == -1) {
+            $webworkclient->create_user($wwassignment->webwork_course,$USER,"10");
+        }
         return $returnid;
     }
     if(isset($wwassignment->webwork_set)) {
@@ -536,7 +541,7 @@ class webwork_client {
                 return $this->mappingcache[$webworkcourse]['user'][$webworkuser];
             }
             $record = $this->handler('get_user',array($webworkcourse,$webworkuser));
-            if(isset($record)) {
+            if($record != -1) {
                 $this->mappingcache[$webworkcourse]['user'][$webworkuser] = $webworkuser;
                 return $webworkuser;
             }
@@ -559,7 +564,7 @@ class webwork_client {
                 return $this->mappingcache[$webworkcourse]['user_set'][$webworkuser][$webworkset];
             }
             $record = $this->handler("get_user_set",array($webworkcourse,$webworkuser,$webworkset));
-            if(isset($record)) {
+            if($record != -1) {
                 $this->mappingcache[$webworkcourse]['user_set'][$webworkuser][$webworkset] = 1;
                 return 1;
             }
@@ -698,29 +703,29 @@ class webwork_client {
         * @param string $permission The permissions of the new user, defaults to 0.
         * @return Returns 1 on success.
         */
-        public function create_user($webworkcourse,$userdata,$permission="0") {
+        public function create_user($webworkcourse,&$userdata,$permission="0") {
             //student ID switch
-            if($USER->student_id) {
-                $studentid = $USER->student_id;
+            if(isset($userdata->student_id)) {
+                $studentid = $userdata->student_id;
             } else {
                 $studentid = $userid;
             }
             //insert user record
             $this->handler("add_user",array($webworkcourse,array(
-                "user_id" => $USER->username,
-                "first_name" => $USER->firstname,
-                "last_name" => $USER->lastname,
-                "email_address" => $USER->emailaddress,
+                "user_id" => $userdata->username,
+                "first_name" => $userdata->firstname,
+                "last_name" => $userdata->lastname,
+                "email_address" => $userdata->emailaddress,
                 "student_id" => $studentid,
-                "status" => "",
+                "status" => "C",
                 "section" => "",
                 "recitation" => "",
                 "comment" => "moodle created user")));
             $this->handler("add_permission",array($webworkcourse,array(
-                "user_id" => $USER->username,
+                "user_id" => $userdata->username,
                 "permission" => $permission)));
             $this->handler("add_password",array($webworkcourse,array(
-                "user_id" => $USER->username,
+                "user_id" => $userdata->username,
                 "password" => $studentid)));
             return 1;
         }
@@ -733,7 +738,7 @@ class webwork_client {
         * @return Returns 1 on success.
         */
         public function create_user_set($webworkcourse,$webworkuser,$webworkset) {
-            $this->handler("create_user_set",array($webworkcourse,$webworkuser,$webworkset));
+            $this->handler("assign_set_to_user",array($webworkcourse,$webworkuser,$webworkset));
             return 1;
         }   
 };

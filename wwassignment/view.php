@@ -1,5 +1,5 @@
 <?php
-// $Id: view.php,v 1.3 2007-06-25 21:03:30 mleventi Exp $
+// $Id: view.php,v 1.4 2007-06-26 06:46:33 mleventi Exp $
 
 /// This page prints a particular instance of wwassignment
 /// (Replace wwassignment with the name of your module)
@@ -43,9 +43,9 @@ if($id) {
         delete_records("wwassignment","webwork_set","undefined");
         delete_course_module($cm->id);
         redirect("../../course/view.php?id=$course->id");
+        die();
     }   
 }
-
 require_login($course->id);
 
 $webworksetlink = wwassignment_view_link($wwassignment->id);
