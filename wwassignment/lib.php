@@ -1,5 +1,5 @@
 <?php
-// $Id: lib.php,v 1.12 2007-06-28 20:09:32 mleventi Exp $
+// $Id: lib.php,v 1.13 2007-06-28 20:45:35 mleventi Exp $
 
 require_once("$CFG->libdir/soap/nusoap.php");
 
@@ -262,7 +262,10 @@ function wwassignment_cron () {
 
         return true;
 }
-
+/**
+* @desc Contacts webwork to find out the completion status of a problem set for all users in a course.
+* @param integer $wwassignmentid The problem set
+*/
 function wwassignment_grades($wwassignmentid) {
 /// Must return an array of grades for a given instance of this module, 
 /// indexed by user.  It also returns a maximum allowed grade.
@@ -705,11 +708,7 @@ class webwork_client {
         * @return Returns 1 on success.
         */
         function create_user($webworkcourse,&$userdata,$permission="0") {
-            if(isset($userdata->student_id)) {
-                $studentid = $userdata->student_id;
-            } else {
-                $studentid = $userid;
-            }
+            $studentid = $userid;
             $this->handler("add_user",array("courseName" => $webworkcourse, "record" => array(
                 "user_id" => $userdata->username,
                 "first_name" => $userdata->firstname,
@@ -720,10 +719,10 @@ class webwork_client {
                 "section" => "",
                 "recitation" => "",
                 "comment" => "moodle created user")));
-            $this->handler("add_permission",array($webworkcourse,array(
+            $this->handler("add_permission",array("courseName" => $webworkcourse,"record" => array(
                 "user_id" => $userdata->username,
                 "permission" => $permission)));
-            $this->handler("add_password",array($webworkcourse,array(
+            $this->handler("add_password",array("courseName" => $webworkcourse,"record" => array(
                 "user_id" => $userdata->username,
                 "password" => $studentid)));
             return 1;
