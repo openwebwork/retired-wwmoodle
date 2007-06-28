@@ -1,5 +1,5 @@
 <?php
-// $Id: lib.php,v 1.13 2007-06-28 20:45:35 mleventi Exp $
+// $Id: lib.php,v 1.14 2007-06-28 21:32:25 mleventi Exp $
 
 require_once("$CFG->libdir/soap/nusoap.php");
 
@@ -302,12 +302,21 @@ function wwassignment_grades($wwassignmentid) {
     $students = get_course_students($COURSE->id);
     
      foreach( $students as $student ) {
-        $webworkuser = $webworkclient->mapped_user($webworkcourse,$student->username,false);
-        $webworkuserset =$webworkclient->mapped_user_set($webworkcourse,$webworkuser,$webworkset,false);
-         $studentproblems = $webworkclient->get_user_problems($webworkcourse,$webworkuser,$webworkset);
-         $finalgrade = 0.0;
-        foreach( $studentproblems as $problem ) {
-            $finalgrade += $problem->status;
+        $webworkuser = $webworkclient->mapped_user($webworkcourse,$student->username);
+        if($webworkuser != -1) {
+            $webworkuserset = $webworkclient->mapped_user_set($webworkcourse,$webworkuser,$webworkset);
+            if($webworkuserset != -1)
+            {
+                $studentproblems = $webworkclient->get_user_problems($webworkcourse,$webworkuser,$webworkset);
+                $finalgrade = 0.0;
+                foreach( $studentproblems as $problem ) {
+                    $finalgrade += $problem->status;
+                }
+            } else {
+                $finalgrade = 0.0;
+            }
+        } else {
+            $finalgrade = 0.0;
         }       
         $studentgrades->grades[$student->id] = $finalgrade;
      }
