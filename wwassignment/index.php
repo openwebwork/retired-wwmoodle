@@ -1,5 +1,5 @@
 <?php
-// $Id: index.php,v 1.3 2007-06-25 21:03:30 mleventi Exp $
+// $Id: index.php,v 1.4 2007-06-28 20:09:32 mleventi Exp $
 
 
 /// This page lists all the instances of wwassignment in a particular course
@@ -7,7 +7,8 @@
 
     require_once("../../config.php");
     require_once("lib.php");
-        $id = required_param('id', PARAM_INT);   // course
+       
+    $id = required_param('id', PARAM_INT);   // course
     
     if (! $course = get_record("course", "id", $id)) {
         error("Course ID is incorrect");
@@ -29,7 +30,6 @@
     if ($course->category) {
         $navigation = "<a href=\"../../course/view.php?id=$course->id\">$course->shortname</a> »";
     }
-
     print_header("$course->shortname: $strwwassignments", "$course->fullname", "$navigation $strwwassignments", "", "", true, "", navmenu($course));
 
 /// Get all the appropriate data
@@ -57,7 +57,7 @@
         $table->head  = array ($strname, $strOpenDate, $strDueDate);
         $table->align = array ("left", "left", "left", "left", "left");
     }
-    $webworkclient = webwork_client::get_instance();
+    $webworkclient =& new webwork_client();
     $webworkcourse = _wwassignment_mapped_course($COURSE->id,false);
     foreach ($wwassignments as $wwassignment) {
         // grab specific info for this set:

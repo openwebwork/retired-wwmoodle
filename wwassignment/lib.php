@@ -1,6 +1,7 @@
 <?php
-// $Id: lib.php,v 1.11 2007-06-26 06:46:33 mleventi Exp $
+// $Id: lib.php,v 1.12 2007-06-28 20:09:32 mleventi Exp $
 
+require_once("$CFG->libdir/soap/nusoap.php");
 
 define('WWASSIGNMENT_WEBWORK_URL', $CFG->wwassignment_webworkurl);
 define('WWASSIGNMENT_WEBWORK_WSDL', $CFG->wwassignment_rpc_wsdl);
@@ -14,7 +15,7 @@ define('WWASSIGNMENT_WEBWORK_KEY',$CFG->wwassignment_rpc_key);
 function wwassignment_view_link($wwassignmentid) {
     global $COURSE,$USER;
     
-    $webworkclient = webwork_client::get_instance();
+    $webworkclient =& new webwork_client();
     $webworkcourse = _wwassignment_mapped_course($COURSE->id,false);
     $webworkset = _wwassignment_mapped_set($wwassignmentid,false);
     $webworkuser = $webworkclient->mapped_user($webworkcourse,$USER->username);
@@ -46,7 +47,7 @@ function wwassignment_view_link($wwassignmentid) {
 */
 function wwassignment_edit_set_link($wwassignmentid) {
     global $COURSE,$USER;
-    $webworkclient = webwork_client::get_instance();
+    $webworkclient =& new webwork_client();
     
     //IS THE COURSE MAPPED?
     $webworkcourse = _wwassignment_mapped_course($COURSE->id,false);
@@ -73,7 +74,7 @@ function wwassignment_edit_set_link($wwassignmentid) {
 */
 function wwassignment_instructor_page_link() {
     global $COURSE,$USER;
-    $webworkclient = webwork_client::get_instance();
+    $webworkclient =& new webwork_client();
     
     $webworkcourse = _wwassignment_mapped_course($COURSE->id,false);
     //IS THE USER MAPPED?
@@ -109,14 +110,14 @@ function wwassignment_add_instance($wwassignment) {
         $returnid = insert_record("wwassignment_bridge",$wwassignment);
         $wwassignment->webwork_set = "undefined";
         $returnid = insert_record("wwassignment",$wwassignment);
-        $webworkclient = webwork_client::get_instance();
+        $webworkclient =& new webwork_client();
         if($webworkclient->mapped_user($wwassignment->webwork_course,$USER->username) == -1) {
             $webworkclient->create_user($wwassignment->webwork_course,$USER,"10");
         }
         return $returnid;
     }
     if(isset($wwassignment->webwork_set)) {
-        $webworkclient = webwork_client::get_instance();
+        $webworkclient =& new webwork_client();
         if($wwassignment->webwork_set =="create") {
             print_error("Creation is not yet supported.");
         }
@@ -154,7 +155,7 @@ function wwassignment_add_instance($wwassignment) {
 */
 function wwassignment_update_instance($wwassignment) {
     global $COURSE;
-    $webworkclient = webwork_client::get_instance();
+    $webworkclient =& new webwork_client();
     $webworkcourse = _wwassignment_mapped_course($COURSE->id);
     $webworkset = _wwassignment_mapped_set($wwassignment->instance,false);
     $webworksetdata = $webworkclient->get_assignment_data($webworkcourse,$webworkset,false);
@@ -189,6 +190,7 @@ function wwassignment_update_instance($wwassignment) {
 
 /**
 * @desc Deletes a tie in Moodle. Deletes nothing in webwork.
+* @param integer $id The id of the assignment to delete.
 */
 function wwassignment_delete_instance($id) {
     
@@ -284,7 +286,7 @@ function wwassignment_grades($wwassignmentid) {
     // redefine it here, 'cause for some reason we can't global it...
     //debug_log("start grades ".$wwassignmentid);
     global $COURSE;
-    $webworkclient = webwork_client::get_instance();
+    $webworkclient =& new webwork_client();
     $studentgrades->grades = array();
     $studentgrades->maxgrade = 0;
         //debug_log("record ".print_r($oMod,true));
@@ -475,37 +477,37 @@ function _wwassignment_link_to_course($webworkcourse) {
 * @desc This singleton class acts as the gateway for all communication from the Moodle Client to the WeBWorK SOAP Server. It encapsulates an instance of a SoapClient.
 */
 class webwork_client {
-        private $client;
-        private $defaultparams;
-        private $datacache;
-        private $mappingcache;
-        static private $instance;
-        
+        var $client;
+        var $defaultparams;
+        var $datacache;
+        var $mappingcache;
         /**
-         * @desc Constructs a webwork_client.
+         * @desc Constructs a singleton webwork_client.
          */
-        private function __construct() {
-            $this->client = new SoapClient(WWASSIGNMENT_WEBWORK_WSDL);
-            $this->defaultparams = array(WWASSIGNMENT_WEBWORK_KEY);
-            $this->datacache = array(); 
-            $this->mappingcache = array();       
-                //Does a mapping exist for this course
-                /*$mapping = _wwassignment_course_mapped();
-                if($mapping != 0) {
-                        $this->defaultparams = array_push($this->defaultparams,$mapping);
-                }*/
-        }
-        /**
-        * @desc Retrieves the singleton instance of the webwork_client class.
-        * @return The instance of the class.
-        */
-        public function get_instance() {
-            if(self::$instance == NULL) {
-                self::$instance = new webwork_client();
+        function webwork_client()
+        {
+            // static associative array containing the real objects, key is classname
+            static $instances=array();
+            // get classname
+            $class = get_class($this);
+            if (!array_key_exists($class, $instances)) {
+                // does not yet exist, save in array
+                $this->client = new soap_client(WWASSIGNMENT_WEBWORK_WSDL,'wsdl');
+                $err = $this->client->getError();
+                if ($err) {
+                    print_error("Constructor Error");
+                }
+                $this->defaultparams = array();
+                $this->defaultparams['authenKey']  = WWASSIGNMENT_WEBWORK_KEY;
+                $this->datacache = array(); 
+                $this->mappingcache = array();
+                $instances[$class] = $this;
+                
             }
-            return self::$instance;
-        }
-        
+            foreach (get_class_vars($class) as $var => $value) {
+                $this->$var =& $instances[$class]->$var;
+            }
+        }    
         /**
          *@desc Calls a SOAP function and passes (authenkey,course) automatically in the parameter list.
          *@param string $functioncall The function to call
@@ -513,20 +515,19 @@ class webwork_client {
          *@param integer $override=false whether to override the default parameters that are passed to the soap function (authenKey).
          *@return Result of the soap function.
          */
-        private function handler($functioncall,$params=array(),$override=false) {
+        function handler($functioncall,$params=array(),$override=false) {
                 if(!is_array($params)) {
                         $params = array($params);   
                 }
                 if(!$override) {
                         $params = array_merge($this->defaultparams,$params);
                 }
-                try {
-                        return call_user_func_array(array(&$this->client,$functioncall),$params);
-                        
+                $result = $this->client->call($functioncall,$params);
+                //$result = call_user_func_array(array(&$this->client,$functioncall),$params);
+                if($err = $this->client->getError()) {
+                        print_error(get_string("rpc_fault","wwassignment") . " " . $functioncall. " ". $err);  
                 }
-                catch (SoapFault $exception) {
-                        print_error(get_string("rpc_fault","wwassignment") . " " . $functioncall. " ". $exception->faultstring);
-                }
+                return $result;
         }
         
         /**
@@ -536,11 +537,11 @@ class webwork_client {
         * @param integer $silent whether to trigger an error message
         * @return string Returns the webwork user on success and -1 on failure.
         */
-        public function mapped_user($webworkcourse,$webworkuser,$silent = true) {
+        function mapped_user($webworkcourse,$webworkuser,$silent = true) {
             if(isset($this->mappingcache[$webworkcourse]['user'][$webworkuser])) {
                 return $this->mappingcache[$webworkcourse]['user'][$webworkuser];
             }
-            $record = $this->handler('get_user',array($webworkcourse,$webworkuser));
+            $record = $this->handler('get_user',array("courseName" => $webworkcourse,"userID" => $webworkuser));
             if($record != -1) {
                 $this->mappingcache[$webworkcourse]['user'][$webworkuser] = $webworkuser;
                 return $webworkuser;
@@ -559,11 +560,11 @@ class webwork_client {
         * @param integer $silent whether to trigger an error message
         * @return integer Returns 1 on success and -1 on failure.
         */
-        public function mapped_user_set($webworkcourse,$webworkuser,$webworkset,$silent = true) {
+        function mapped_user_set($webworkcourse,$webworkuser,$webworkset,$silent = true) {
             if(isset($this->mappingcache[$webworkcourse]['user_set'][$webworkuser][$webworkset])) {
                 return $this->mappingcache[$webworkcourse]['user_set'][$webworkuser][$webworkset];
             }
-            $record = $this->handler("get_user_set",array($webworkcourse,$webworkuser,$webworkset));
+            $record = $this->handler("get_user_set",array("courseName" => $webworkcourse,"userID" => $webworkuser,"setID" => $webworkset));
             if($record != -1) {
                 $this->mappingcache[$webworkcourse]['user_set'][$webworkuser][$webworkset] = 1;
                 return 1;
@@ -582,8 +583,8 @@ class webwork_client {
         * @param integer $silent whether to trigger an error message
         * @return array Returns set information on success or -1 on failure.
         */
-        public function get_assignment_data($webworkcourse,$webworkset,$silent = true) {
-            $record = $this->handler("get_global_set",array($webworkcourse,$webworkset));
+        function get_assignment_data($webworkcourse,$webworkset,$silent = true) {
+            $record = $this->handler("get_global_set",array('courseName' => $webworkcourse, 'setID' => $webworkset));
             if(isset($record)) {
                 $setinfo = array();
                 $setinfo['open_date'] = $record->open_date;
@@ -607,8 +608,8 @@ class webwork_client {
         * @param integer $silent whether to trigger an error message
         * @return array Returns an array of problems on success or -1 on failure.
         */
-        public function get_user_problems($webworkcourse,$webworkuser,$webworkset,$silent = true) {
-            $record = $this->handler("get_all_user_problems",array($webworkcourse,$webworkuser,$webworkset));
+        function get_user_problems($webworkcourse,$webworkuser,$webworkset,$silent = true) {
+            $record = $this->handler("get_all_user_problems",array("courseName" => $webworkcourse,"userID" => $webworkuser,"setID" => $webworkset));
             if(isset($record)) {
                 return $record;
             }
@@ -625,8 +626,8 @@ class webwork_client {
         * @param integer $silent whether to trigger an error message
         * @return integer The max grade on success or -1 on failure.
         */
-        public function get_max_grade($webworkcourse,$webworkset,$silent = true) {
-            $record = $this->handler('list_global_problems',array($webworkcourse,$webworkset));
+        function get_max_grade($webworkcourse,$webworkset,$silent = true) {
+            $record = $this->handler('list_global_problems',array("courseName" => $webworkcourse,"setID" => $webworkset));
             if(isset($record)) {
                 return count($record);
             }
@@ -643,8 +644,8 @@ class webwork_client {
         * @param integer $silent whether to trigger an error message
         * @return string The webwork key for URL on success or -1 on failure.
         */
-        public function login_user($webworkcourse,$webworkuser,$silent = true) {
-            $key = $this->handler("login_user",array($webworkcourse,$webworkuser));
+        function login_user($webworkcourse,$webworkuser,$silent = true) {
+            $key = $this->handler("login_user",array("courseName" => $webworkcourse,"userID" => $webworkuser));
             if(isset($key)) {
                 return $key;
             }
@@ -660,8 +661,8 @@ class webwork_client {
         * @param integer $silent whether to trigger an error message
         * @return array The form options.
         */
-        public function options_set($webworkcourse,$silent = true) {
-            $setlist = $this->handler('list_global_sets',array($webworkcourse));
+        function options_set($webworkcourse,$silent = true) {
+            $setlist = $this->handler('list_global_sets',array("courseName" => $webworkcourse));
             if(isset($setlist)) {
                 $setoptions = array();
                 foreach($setlist as $setid) {
@@ -703,15 +704,13 @@ class webwork_client {
         * @param string $permission The permissions of the new user, defaults to 0.
         * @return Returns 1 on success.
         */
-        public function create_user($webworkcourse,&$userdata,$permission="0") {
-            //student ID switch
+        function create_user($webworkcourse,&$userdata,$permission="0") {
             if(isset($userdata->student_id)) {
                 $studentid = $userdata->student_id;
             } else {
                 $studentid = $userid;
             }
-            //insert user record
-            $this->handler("add_user",array($webworkcourse,array(
+            $this->handler("add_user",array("courseName" => $webworkcourse, "record" => array(
                 "user_id" => $userdata->username,
                 "first_name" => $userdata->firstname,
                 "last_name" => $userdata->lastname,
@@ -737,8 +736,8 @@ class webwork_client {
         * @param string $webworkset The webwork set name.
         * @return Returns 1 on success.
         */
-        public function create_user_set($webworkcourse,$webworkuser,$webworkset) {
-            $this->handler("assign_set_to_user",array($webworkcourse,$webworkuser,$webworkset));
+        function create_user_set($webworkcourse,$webworkuser,$webworkset) {
+            $this->handler("assign_set_to_user",array("courseName" => $webworkcourse,"userID" => $webworkuser, "setID" => $webworkset));
             return 1;
         }   
 };

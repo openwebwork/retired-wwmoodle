@@ -9,7 +9,7 @@ class mod_wwassignment_mod_form extends moodleform_mod {
         $mform =& $this->_form;
         //Is this particular course mapped to a course in WeBWorK
         
-        $webworkclient = webwork_client::get_instance();
+        $webworkclient =& new webwork_client();
         $coursemapped = _wwassignment_mapped_course($COURSE->id);
         if($coursemapped == -1) {
             
