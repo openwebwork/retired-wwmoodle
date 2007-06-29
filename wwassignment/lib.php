@@ -1,5 +1,5 @@
 <?php
-// $Id: lib.php,v 1.15 2007-06-29 19:04:41 mleventi Exp $
+// $Id: lib.php,v 1.16 2007-06-29 19:17:28 mleventi Exp $
 
 require_once("$CFG->libdir/soap/nusoap.php");
 
@@ -514,9 +514,7 @@ class webwork_client {
                 if(!$override) {
                         $params = array_merge($this->defaultparams,$params);
                 }
-                var_dump($params);
                 $result = $this->client->call($functioncall,$params);
-                var_dump($result);
                 //$result = call_user_func_array(array(&$this->client,$functioncall),$params);
                 if($err = $this->client->getError()) {
                         print_error(get_string("rpc_fault","wwassignment") . " " . $functioncall. " ". $err);  
@@ -699,7 +697,6 @@ class webwork_client {
         * @return Returns 1 on success.
         */
         function create_user($webworkcourse,&$userdata,$permission="0") {
-            echo "Creating user" . $permission;
             $studentid = $userid;
             $this->handler("add_user",array("courseName" => $webworkcourse, "record" => array(
                 "user_id" => $userdata->username,
