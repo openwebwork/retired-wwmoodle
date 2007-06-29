@@ -1,5 +1,5 @@
 <?php
-// $Id: lib.php,v 1.14 2007-06-28 21:32:25 mleventi Exp $
+// $Id: lib.php,v 1.15 2007-06-29 19:04:41 mleventi Exp $
 
 require_once("$CFG->libdir/soap/nusoap.php");
 
@@ -152,6 +152,7 @@ function wwassignment_add_instance($wwassignment) {
 
 /**
 * @desc Updates and resynchronizes all information related to the a moodle assignment <-> webwork problem set tie.
+* @param The ID of the wwassignment to update.
 */
 function wwassignment_update_instance($wwassignment) {
     global $COURSE;
@@ -267,27 +268,6 @@ function wwassignment_cron () {
 * @param integer $wwassignmentid The problem set
 */
 function wwassignment_grades($wwassignmentid) {
-/// Must return an array of grades for a given instance of this module, 
-/// indexed by user.  It also returns a maximum allowed grade.
-///
-///    $return->grades = array of grades;
-///    $return->maxgrade = maximum allowed grade;
-///
-///    return $return;
-    // here's how we compute the grade:
-    // NOTE: each set has P problems in it.
-    // NOTE: each problem may be attempted M times.
-    // NOTE: each problem has been attempted A times (by a given user).
-    // NOTE: each problem was gotten correct C times (by a given user).
-    // NOTE: each problem was gotten incorrect I times (by a given user).
-    // Thus, a users grade is: sigma(over P) C/A
-    // And the max score is P
-    // Alternately, code is provided for:
-    // sigma(over P) { if( C > 0) 1 else 0 }
-    // again with a max of P
-    
-    // redefine it here, 'cause for some reason we can't global it...
-    //debug_log("start grades ".$wwassignmentid);
     global $COURSE;
     $webworkclient =& new webwork_client();
     $studentgrades->grades = array();
@@ -507,7 +487,7 @@ class webwork_client {
                 $this->client = new soap_client(WWASSIGNMENT_WEBWORK_WSDL,'wsdl');
                 $err = $this->client->getError();
                 if ($err) {
-                    print_error("Constructor Error");
+                    print_error("Constructor Error $err");
                 }
                 $this->defaultparams = array();
                 $this->defaultparams['authenKey']  = WWASSIGNMENT_WEBWORK_KEY;
@@ -534,7 +514,9 @@ class webwork_client {
                 if(!$override) {
                         $params = array_merge($this->defaultparams,$params);
                 }
+                var_dump($params);
                 $result = $this->client->call($functioncall,$params);
+                var_dump($result);
                 //$result = call_user_func_array(array(&$this->client,$functioncall),$params);
                 if($err = $this->client->getError()) {
                         print_error(get_string("rpc_fault","wwassignment") . " " . $functioncall. " ". $err);  
@@ -717,6 +699,7 @@ class webwork_client {
         * @return Returns 1 on success.
         */
         function create_user($webworkcourse,&$userdata,$permission="0") {
+            echo "Creating user" . $permission;
             $studentid = $userid;
             $this->handler("add_user",array("courseName" => $webworkcourse, "record" => array(
                 "user_id" => $userdata->username,
