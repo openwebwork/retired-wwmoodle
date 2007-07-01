@@ -1,61 +1,54 @@
 <?php
-// $Id: lang.php,v 1.3 2007-06-25 21:03:30 mleventi Exp $
+// $Id: lang.php,v 1.4 2007-07-01 20:44:13 mleventi Exp $
 // language strings for wwmoodle_set
 // TODO: merge with proper language stuff
 
 $string['modulename'] = "WeBWorK Problem Set";
 $string['modulenameplural'] = "WeBWorK Problem Sets";
 
+$string['set_name'] = $string['modulename'];
 
-//RPC
-$string['rpc_wsdl'] = "Path to the WSDL file on the host running WeBWorK.";
-$string['rpc_key'] = "Key identifying Moodle to WeBWorK.";
-$string['rpc_fault'] = "WeBWorK Failure:";
+//index list
+$string['open_date'] = "Opened";
+$string['due_date'] = "Due";
 
+//viewing page
 
-$string['set_id'] = "Problem Set";
-$string['helpSet_id'] = "Problem Set?";
-$string['gradeMethod'] = "Grading Method";
-$string['helpGradeMethod'] = "Grading Method?";
-
-$string['gradeSimple'] = "Simple";
-$string['gradeDeductRetry'] = "Deduct Retries";
-
-$string['openDate'] = "Opened";
-$string['dueDate'] = "Due";
-
+$string['go_to_webwork'] = "Administer the WeBWorK portion of this course.";
 $string['iframeNoShow-1'] = "If you are unable to view this problem set, please ";
 $string['iframeNoShow-2'] = "click here";
 
-$string['hasNoBridge'] = "There is no WeBWorK/Moodle bridge for this course. You must add one before you can add a problem set.";
+//Course Link form
+$string['course_initialization'] = 'Linking to WeBWorK';
+$string['webwork_course'] = 'WeBWorK Course';
+
+//Set Link form
+$string['set_initialization'] = 'Linking to WeBWorK Problem Set';
+$string['webwork_set'] = 'WeBWorK Set';
+$string['instructor_page_link_desc'] = 'Link to the Instructor Section of WeBWorK';
+$string['instructor_page_link_name'] = 'Go To WeBWorK Instructor Tools';
+
+$string['edit_set_link_desc'] = 'Link to Set Modification Section of WeBWorK';
+$string['edit_set_link_name'] = 'Modify Set';
+
+//CONFIG
+$string['webwork_url'] = "The URL location of webwork on the server. ex: http://www.example.org/webwork2";
+$string['iframe_width'] = "The width in percentage of the page of the iframe displaying WeBWorK problem sets.";
+$string['iframe_height'] = "The height in pixels of the iframe displaying WeBWorK problem sets.";
+$string['rpc_wsdl'] = "Path to the WSDL file on the host running WeBWorK.";
+$string['rpc_key'] = "Key identifying Moodle to WeBWorK.";
 
 
-
-$string['webwork_url'] = "This is the URL where WeBWorK is available. It is used to send students off to their assignments. Generally it is something like /webwork2";
-
-$string['iframe_width'] = " This is the width of the iframe used to show students their homework.";
-
-$string['iframe_height'] = "This is the height of the iframe used to show students their homework.";
-
-
-
-$string['alreadyHasBridge'] = "This course already has a WeBWorK/Moodle Bridge. Adding another one would only confuse things.";
-
-$string['goToWeBWorK'] = "Administer the WeBWorK portion of this course.";
-$string['WeBWorKSets'] = "Assigned WeBWorK Sets";
-$string['setName'] = "Set Name";
-$string['setId'] = "Set ID";
-$string['noSets'] = "No sets were found for this course.";
+//ERRORS
+$string['construction_error'] = 'An error occured in the connection to the WeBWorK server. Perhaps you have your wsdl path set wrong?';
+$string['event_creation_error'] = 'wwassignment event could not be created.';
+$string['webwork_course_list_map_failure'] = 'Could not retrieve a list of courses on the current WeBWorK server.';
+$string['webwork_course_map_failure'] = 'No WeBWorK course is mapped to the current Moodle course.';
+$string['webwork_set_map_failure'] = 'No WeBWorK problem set is mapped to the current Moodle problem set.';
+$string['webwork_user_map_failure'] = 'No WeBWorK user is mapped to the current Moodle user.';
+$string['webwork_user_set_map_failure'] = 'The WeBWorK user does not have the current Moodle set assigned.';
+$string['rpc_error'] = 'Communication error between the Moodle client and WeBWorK server.';
 
 
-
-$string['webwork_courses'] = "This is the directory where WeBWorK stores information about courses. Generally it should be wherever-you-installed-webwork/courses (eg: /opt/webwork2/courses/). NOTE: This <b>MUST</b> end with a '/'!";
-
-
-
-
-$string['on'] = "On";
-
-$string['off'] = "Off";
 
 ?>

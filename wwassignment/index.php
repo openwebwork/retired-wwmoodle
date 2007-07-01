@@ -1,5 +1,5 @@
 <?php
-// $Id: index.php,v 1.4 2007-06-28 20:09:32 mleventi Exp $
+// $Id: index.php,v 1.5 2007-07-01 20:44:13 mleventi Exp $
 
 
 /// This page lists all the instances of wwassignment in a particular course
@@ -44,8 +44,8 @@
     $strweek  = get_string("week");
     $strtopic  = get_string("topic");
     
-    $strOpenDate = get_string("openDate", "wwassignment");
-    $strDueDate = get_string("dueDate", "wwassignment");
+    $strOpenDate = get_string("open_date", "wwassignment");
+    $strDueDate = get_string("due_date", "wwassignment");
     
     if ($course->format == "weeks") {
         $table->head  = array ($strweek, $strname, $strOpenDate, $strDueDate);
@@ -84,7 +84,7 @@
     
     print_table($table);
     if( isteacher($course->id) ) {
-        print("<p style='font-size: smaller; color: #aaa; text-align: center;'><a style='color: #666;text-decoration:underline' href='".WWASSIGNMENT_WEBWORK_URL."/$course->shortname/instructor' target='_webwork_edit'>".get_string("goToWeBWorK", "wwassignment")."</a></p>");
+        print("<p style='font-size: smaller; color: #aaa; text-align: center;'><a style='color: #666;text-decoration:underline' href='".WWASSIGNMENT_WEBWORK_URL."/$course->shortname/instructor' target='_webwork_edit'>".get_string("go_to_webwork", "wwassignment")."</a></p>");
     }
 /// Finish the page
     print_footer($course);

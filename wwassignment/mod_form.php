@@ -19,8 +19,6 @@ class mod_wwassignment_mod_form extends moodleform_mod {
             $options = $webworkclient->options_course();
             $mform->addElement('select', 'webwork_course', get_string('webwork_course', 'wwassignment'), $options);
             $mform->setHelpButton('webwork_course', array('webwork_course', get_string('webwork_course', 'wwassignment'), 'wwassignment'));
-            
-            $mform->addElement('checkbox','auto_enroll_course',get_string('auto_enroll_course','wwassignment'),get_string('auto_enroll_course_desc','wwassignment'));
             $this->add_action_buttons();
             $this->standard_hidden_coursemodule_elements();
             return;
@@ -32,7 +30,6 @@ class mod_wwassignment_mod_form extends moodleform_mod {
             $options = $webworkclient->options_set($coursemapped);
             $mform->addElement('select','webwork_set',get_string('webwork_set','wwassignment'),$options);
             $mform->setHelpButton('webwork_set', array('webwork_set', get_string('webwork_set', 'wwassignment'), 'wwassignment'));     
-            $mform->addElement('checkbox','auto_enroll_set',get_string('auto_enroll_set','wwassignment'),get_string('auto_enroll_set_desc','wwassignment'));
             $this->add_action_buttons();
             $this->standard_hidden_coursemodule_elements();
             return;
