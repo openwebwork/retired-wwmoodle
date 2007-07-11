@@ -142,9 +142,9 @@ class webwork_qtype extends default_questiontype {
         $code = base64_encode($question->code);
         
         //Get previous answers to send to the server
-        $answer_array = array();
+        $answerarray = array();
         foreach($state->responses as $key => $value) {
-            array_push($answer_array, array('field' => $key, 'answer'=> $value));
+            array_push($answerarray, array('field' => $key, 'answer'=> $value));
         }
         
         //echo "PRINT" . $state->responses['seed'];
@@ -153,7 +153,7 @@ class webwork_qtype extends default_questiontype {
             'id' => '5',
             'code' => $code,
             'seed' => $state->responses['seed'],
-            'answers' => $answer_array,
+            'answers' => $answerarray,
             'displayMode' => PROBLEMSERVER_DISPLAYMODE
         ));
         $client = new problemserver_client();
@@ -161,18 +161,18 @@ class webwork_qtype extends default_questiontype {
         $response = $client->handler('renderProblem',$params);
         //var_dump($response);
         //var_dump($response);
-        $problemHTML = base64_decode($response['body_text']);
+        $problemhtml = base64_decode($response['body_text']);
         
         
         //change the form fields so moodle likes them
-        $answerFields = $response['answers'];
-        foreach($answerFields as $answerObj) {
-            $state->responses[$answerObj['field']] = $answerObj['answer'];
-            $search = $search = 'NAME=' . '"' . $answerObj['field'] . '" VALUE=' . '"' . '">';
-            $replace = 'NAME=' . '"resp' . $question->id . "_" . $answerObj['field'] . '" VALUE=' . '"' . $answerObj['answer'] . '"';
+        $answerfields = $response['answers'];
+        foreach($answerfields as $answerobj) {
+            $state->responses[$answerobj['field']] = $answerobj['answer'];
+            $search = $search = 'NAME=' . '"' . $answerobj['field'] . '" VALUE=' . '"' . '">';
+            $replace = 'NAME=' . '"resp' . $question->id . "_" . $answerobj['field'] . '" VALUE=' . '"' . $answerobj['answer'] . '"';
             $feedbackimg = "";
             if($state->event == QUESTION_EVENTGRADE) {
-                if($answerObj['score'] == 1) {
+                if($answerobj['score'] == 1) {
                     $class = question_get_feedback_class(1);
                     //$feedbackimg = question_get_feedback_image(1);
                 } else {
@@ -182,7 +182,7 @@ class webwork_qtype extends default_questiontype {
                 $replace .= ' CLASS="' . $class . '"';
             }
             $replace .= ">";// . $feedbackimg;//<div class='feedback'>" . $answerObj['answer_msg'] . "</div>";
-            $problemHTML = str_replace($search,$replace,$problemHTML);
+            $problemhtml = str_replace($search,$replace,$problemhtml);
         }
         
         //for the seed form field
@@ -202,7 +202,7 @@ class webwork_qtype extends default_questiontype {
         //var_dump($state);
         $code = base64_encode($question->code);
         //get answers
-        $answer_array = array();
+        $answerarray = array();
         foreach($state->responses as $key => $value) {
             array_push($answer_array, array('field' => $key, 'answer'=> $value));
         }
@@ -211,7 +211,7 @@ class webwork_qtype extends default_questiontype {
             'id' => '5',
             'code' => $code,
             'seed' => $state->responses['seed'],
-            'answers' => $answer_array,
+            'answers' => $answerarray,
             'displayMode' => PROBLEMSERVER_DISPLAYMODE
         ));
         $client = new problemserver_client();
@@ -268,7 +268,7 @@ class webwork_qtype extends default_questiontype {
             'id' => '5',
             'code' => $code,
             'seed' => $state->responses['seed'],
-            'answers' => array(array('field'=>'0AnSwEr1','answer'=>'0')),
+            'answers' => array(array()),
             'displayMode' => PROBLEMSERVER_DISPLAYMODE
         ));
         $client = new problemserver_client();

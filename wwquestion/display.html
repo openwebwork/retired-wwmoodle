@@ -2,7 +2,7 @@
     <?php echo $questiontext; ?>
 </div>
 <div class="qtext">
-    <?php echo $problemHTML; ?>
+    <?php echo $problemhtml; ?>
     <input id="resp<?php echo $qid; ?>_seed" name="resp<?php echo $qid; ?>_seed" type="hidden" value="<?php echo $seed; ?>" />
 </div>
 
@@ -20,22 +20,22 @@
         <th class="c0">Evaluated</th>
         <th class="c0">Errors</th>
       </tr>
-      <?php $row = 1; foreach ($answerFields as $answerObj) { ?>
+      <?php $row = 1; foreach ($answerfields as $answerobj) { ?>
       <tr class="<?php echo 'r'.$row = $row ? 0 : 1; ?>">
         <td class="c0" style="width: 15%;">
-          <?php if($answerObj['score'] == 1) { $class = 'correct'; echo "Correct"; } else { $class = 'incorrect'; echo "Incorrect"; } ?>
+          <?php if($answerobj['score'] == 1) { $class = 'correct'; echo "Correct"; } else { $class = 'incorrect'; echo "Incorrect"; } ?>
         </td>
         <td class="c0" style="width: 15%;">
-          <?php echo $answerObj['answer']; echo question_get_feedback_image($answerObj['score']); ?>
+          <?php echo $answerobj['answer']; echo question_get_feedback_image($answerobj['score']); ?>
         </td>
         <td class="c0" style="width: 15%;">
-          <?php echo  $answerObj['preview']; ?>
+          <?php echo  $answerobj['preview']; ?>
         </td>
         <td class="c0" style="width: 15%;">
-          <?php echo $answerObj['evaluated']; ?>
+          <?php echo $answerobj['evaluated']; ?>
         </td>
         <td class="c0" style="width: 40%;">
-          <?php echo $answerObj['answer_msg']; ?>
+          <?php echo $answerobj['answer_msg']; ?>
         </td>
       </tr>
     <?php } ?>
