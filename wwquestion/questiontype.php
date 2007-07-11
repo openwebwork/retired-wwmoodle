@@ -16,7 +16,8 @@ define('PROBLEMSERVER_DISPLAYMODE','images');
  * @author mleventi@gmail.com
  * @license http://www.gnu.org/copyleft/gpl.html GNU Public License
  * @package webwork_qtype
- *//** */
+ * 
+**/
 
 /**
  * The webwork question class
@@ -298,7 +299,7 @@ class webwork_qtype extends default_questiontype {
             }
         }
         $lmax = 40;
-        $responses[] = (strlen($temp) > $lmax) ?substr($temp, 0, $lmax).'...' : $temp;
+        $responses[] = (strlen($temp) > $lmax) ? substr($temp, 0, $lmax).'...' : $temp;
         return $responses;
     }
 
@@ -308,10 +309,23 @@ class webwork_qtype extends default_questiontype {
      * This is used in question/backuplib.php
      */
     function backup($bf,$preferences,$question,$level=6) {
+
         $status = true;
 
-        // TODO write code to backup an instance of your question type.
-
+        $webworks = get_records('question_webwork', 'question', $question, 'id ASC');
+        //If there are webworks
+        if ($webworks) {
+            //Iterate over each webwork
+            foreach ($webworks as $webwork) {
+                $status = fwrite ($bf,start_tag("WEBWORK",$level,true));
+                //Print webwork contents
+                fwrite ($bf,full_tag("CODE",$level+1,false,$webwork->code));
+                fwrite ($bf,full_tag("SEED",$level+1,false,$webwork->seed));
+                $status = fwrite ($bf,end_tag("WEBWORK",$level,true));
+            }
+            //Now print question_webwork
+            $status = question_backup_answers($bf,$preferences,$question);
+        }
         return $status;
     }
 
@@ -320,14 +334,43 @@ class webwork_qtype extends default_questiontype {
      *
      * This is used in question/restorelib.php
      */
-    function restore($old_question_id,$new_question_id,$info,$restore) {
+     function restore($old_question_id,$new_question_id,$info,$restore) {
+
         $status = true;
 
-        // TODO write code to restore an instance of your question type.
+        //Get the shortanswers array
+        $webworks = $info['#']['WEBWORK'];
 
+        //Iterate over shortanswers
+        for($i = 0; $i < sizeof($webworks); $i++) {
+            $webwork_info = $webworks[$i];
+
+            //Now, build the question_shortanswer record structure
+            $webwork = new stdClass;
+            $webwork->question = $new_question_id;
+            $webwork->code = backup_todb($webwork_info['#']['CODE']['0']['#']);
+            $webwork->seed = backup_todb($webwork_info['#']['SEED']['0']['#']);
+
+            //The structure is equal to the db, so insert the question_shortanswer
+            $newid = insert_record("question_webwork",$webwork);
+
+            //Do some output
+            if (($i+1) % 50 == 0) {
+                if (!defined('RESTORE_SILENTLY')) {
+                    echo ".";
+                    if (($i+1) % 1000 == 0) {
+                        echo "<br />";
+                    }
+                }
+                backup_flush(300);
+            }
+
+            if (!$newid) {
+                $status = false;
+            }
+        }
         return $status;
     }
-
 }
 
 /**
@@ -355,7 +398,8 @@ class problemserver_client {
             foreach (get_class_vars($class) as $var => $value) {
                 $this->$var =& $instances[$class]->$var;
             }
-        }    
+        }
+            
         /**
          *@desc Calls a SOAP function and passes (authenkey,course) automatically in the parameter list.
          *@param string $functioncall The function to call
