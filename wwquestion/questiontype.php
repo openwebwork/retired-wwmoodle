@@ -204,7 +204,7 @@ class webwork_qtype extends default_questiontype {
         //get answers
         $answerarray = array();
         foreach($state->responses as $key => $value) {
-            array_push($answer_array, array('field' => $key, 'answer'=> $value));
+            array_push($answerarray, array('field' => $key, 'answer'=> $value));
         }
         
         $params = array('request' => array(

@@ -29,7 +29,7 @@
           <?php echo $answerobj['answer']; echo question_get_feedback_image($answerobj['score']); ?>
         </td>
         <td class="c0" style="width: 15%;">
-          <?php echo  $answerobj['preview']; ?>
+          <?php echo base64_decode($answerobj['preview']); ?>
         </td>
         <td class="c0" style="width: 15%;">
           <?php echo $answerobj['evaluated']; ?>
