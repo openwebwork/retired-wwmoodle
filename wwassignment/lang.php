@@ -1,5 +1,5 @@
 <?php
-// $Id: lang.php,v 1.4 2007-07-01 20:44:13 mleventi Exp $
+// $Id: lang.php,v 1.5 2007-07-12 18:35:32 mleventi Exp $
 // language strings for wwmoodle_set
 // TODO: merge with proper language stuff
 
@@ -37,6 +37,7 @@ $string['iframe_width'] = "The width in percentage of the page of the iframe dis
 $string['iframe_height'] = "The height in pixels of the iframe displaying WeBWorK problem sets.";
 $string['rpc_wsdl'] = "Path to the WSDL file on the host running WeBWorK.";
 $string['rpc_key'] = "Key identifying Moodle to WeBWorK.";
+$string['testchanges'] = "Test WeBWorK Connection.";
 
 
 //ERRORS

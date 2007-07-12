@@ -1,5 +1,5 @@
 <?php
-// $Id: lib.php,v 1.17 2007-07-01 20:44:13 mleventi Exp $
+// $Id: lib.php,v 1.18 2007-07-12 18:35:32 mleventi Exp $
 
 require_once("$CFG->libdir/soap/nusoap.php");
 
@@ -271,8 +271,19 @@ function wwassignment_grades($wwassignmentid) {
     
     // enumerate over the students in the course:
     $students = get_course_students($COURSE->id);
+    $usernamearray = array();
+    foreach($students as $student) {
+        array_push($usernamearray,$student->username);
+    }
+    $gradearray  = $webworkclient->grade_users_sets($webworkcourse,$usernamearray,$webworkset);
+    $i = 0;
+    foreach($students as $student) {
+        $studentgrades->grades[$student->id] = $gradearray[$i];
+        $i++;
+    }
+    $studentgrades->maxgrade = $webworkclient->get_max_grade($webworkcourse,$webworkset);
     
-     foreach( $students as $student ) {
+    /*foreach( $students as $student ) {
         $webworkuser = $webworkclient->mapped_user($webworkcourse,$student->username);
         if($webworkuser != -1) {
             $webworkuserset = $webworkclient->mapped_user_set($webworkcourse,$webworkuser,$webworkset);
@@ -292,7 +303,7 @@ function wwassignment_grades($wwassignmentid) {
         $studentgrades->grades[$student->id] = $finalgrade;
      }
     
-    $studentgrades->maxgrade = $webworkclient->get_max_grade($webworkcourse,$webworkset);    
+    $studentgrades->maxgrade = $webworkclient->get_max_grade($webworkcourse,$webworkset);*/    
     return $studentgrades;
 }
 
@@ -717,7 +728,18 @@ class webwork_client {
         function create_user_set($webworkcourse,$webworkuser,$webworkset) {
             $this->handler('assign_set_to_user',array('courseName' => $webworkcourse,'userID' => $webworkuser, 'setID' => $webworkset));
             return 1;
-        }   
+        }
+        
+        /**
+        * @desc Finds grades of many users for one set.
+        * @param string $webworkcourse The webwork course name.
+        * @param array $webworkusers A list of webwork users
+        * @param string $webworkset The webwork set name
+        * @return array Returns an array of grades   
+        */
+        function grade_users_sets($webworkcourse,$webworkusers,$webworkset) {
+            return $this->handler('grade_users_sets',array('courseName' => $webworkcourse, 'userIDs' => $webworkusers, 'setID' => $webworkset));
+        }
 };
 
 ?>
