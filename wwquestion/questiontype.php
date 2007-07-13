@@ -6,8 +6,6 @@ require_once("htmlparser.php");
 
 //Path to the WSDL file on the Webwork Server
 define('PROBLEMSERVER_WSDL','http://128.151.231.20/problemserver_wsdl/');
-
-//Display Mode
 define('PROBLEMSERVER_DISPLAYMODE','images');
 
 
@@ -344,17 +342,15 @@ class webwork_qtype extends default_questiontype {
         // TODO
         $temp = '';
         $i = 1;
-        foreach($state->responses as $key => $value) {
-            if($key != 'seed') {
-                $temp .= "$i) " . $value . " ";
-                $i++;
-            }
+        foreach($state->responses['answers'] as $key => $value) {
+            $temp .= "$i) " . $value['answer'] . " ";
+            $i++;
         }
         $lmax = 40;
         $responses[] = (strlen($temp) > $lmax) ? substr($temp, 0, $lmax).'...' : $temp;
         return $responses;
     }
-
+    
     /**
      * Backup the data in the question
      *
