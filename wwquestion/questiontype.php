@@ -5,7 +5,7 @@ require_once("$CFG->libdir/soap/nusoap.php");
 require_once("htmlparser.php");
 
 //Path to the WSDL file on the Webwork Server
-define('PROBLEMSERVER_WSDL','http://128.151.231.20/problemserver_wsdl/');
+define('PROBLEMSERVER_WSDL','http://128.151.231.20/WSDL.wsdl');
 define('PROBLEMSERVER_DISPLAYMODE','images');
 
 
@@ -253,6 +253,7 @@ class webwork_qtype extends default_questiontype {
         //var_dump($state);
         $code = base64_encode($question->code);
         $seed = $state->responses['seed'];
+        echo  $seed;
         //get answers
         $answerarray = array();
         foreach($state->responses as $key => $value) {
@@ -313,7 +314,9 @@ class webwork_qtype extends default_questiontype {
     function get_correct_responses(&$question, &$state) {
         
         $code = base64_encode($question->code);
+        
         $seed = $state->responses['seed'];
+        echo $seed;
         
         //tricks checkAnswer into believing we are sending an anwer
         $answerarray = array(array('field'=>'','answer'=>''));
