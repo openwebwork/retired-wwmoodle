@@ -4,6 +4,7 @@
 <div class="qtext">
     <?php echo $problemhtml; ?>
     <input id="resp<?php echo $qid; ?>_seed" name="resp<?php echo $qid; ?>_seed" type="hidden" value="<?php echo $seed; ?>" />
+    <input id="resp<?php echo $qid; ?>_derivedid" name="resp<?php echo $qid; ?>_derivedid" type="hidden" value="<?php echo $derivedid; ?>" />
 </div>
 
 <?php if ($image) { ?>
@@ -23,10 +24,11 @@
       <?php $row = 1; foreach ($answerfields as $answerobj) { ?>
       <tr class="<?php echo 'r'.$row = $row ? 0 : 1; ?>">
         <td class="c0" style="width: 15%;">
+          <?php echo question_get_feedback_image($answerobj['score']); ?>
           <?php if($answerobj['score'] == 1) { $class = 'correct'; echo "Correct"; } else { $class = 'incorrect'; echo "Incorrect"; } ?>
         </td>
         <td class="c0" style="width: 15%;">
-          <?php echo $answerobj['answer']; echo question_get_feedback_image($answerobj['score']); ?>
+          <?php echo $answerobj['answer'];  ?>
         </td>
         <td class="c0" style="width: 15%;">
           <?php echo base64_decode($answerobj['preview']); ?>

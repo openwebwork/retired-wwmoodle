@@ -36,6 +36,14 @@ class question_edit_webwork_form extends question_edit_form {
         $mform->setHelpButton('seed', array('webwork', get_string('edit_seed', 'qtype_webwork'), 'webwork'));
         $mform->setDefault('seed', 0);
         $mform->addRule('seed', null, 'required', null, 'client');
+        
+        //TRIALS
+        $mform->addElement('text', 'trials', get_string('edit_trials','qtype_webwork'),
+            array('size' => 3));
+        $mform->setType('trials', PARAM_INT);
+        $mform->setHelpButton('trials', array('webwork', get_string('edit_trials', 'qtype_webwork'), 'webwork'));
+        $mform->setDefault('trials', 10);
+        $mform->addRule('trials', null, 'required', null, 'client');
     }
 
     function set_data($question) {

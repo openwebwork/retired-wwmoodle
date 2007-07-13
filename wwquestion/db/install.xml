@@ -1,16 +1,29 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <XMLDB PATH="question/type/webwork/db" VERSION="20070704" COMMENT="XMLDB file for this question type">
   <TABLES>
-    <TABLE NAME="question_webwork" COMMENT="Options for webwork questions">
+    <TABLE NAME="question_webwork" COMMENT="Options for webwork questions" NEXT="question_webwork_derived">
         <FIELDS>
             <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="true" ENUM="false" NEXT="question"/>
             <FIELD NAME="question" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="id" NEXT="code"/>
             <FIELD NAME="code" TYPE="text" LENGTH="medium" NOTNULL="true" SEQUENCE="false" ENUM="false" PREVIOUS="question" NEXT="seed"/>
-            <FIELD NAME="seed" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="1" SEQUENCE="false" ENUM="false" PREVIOUS="code"/>
+            <FIELD NAME="seed" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="1" SEQUENCE="false" ENUM="false" PREVIOUS="code" NEXT="trials"/>
+            <FIELD NAME="trials" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="1" SEQUENCE="false" ENUM="false" PREVIOUS="seed"/>
         </FIELDS>
         <KEYS>
             <KEY NAME="primary" TYPE="primary" FIELDS="id" COMMENT="Primary key for question_webwork" NEXT="question"/>
             <KEY NAME="question" TYPE="foreign" FIELDS="question" REFTABLE="questions" REFFIELDS="id" PREVIOUS="primary"/>
+        </KEYS>
+    </TABLE>
+    <TABLE NAME="question_webwork_derived" COMMENT="Options for derived webwork questions" PREVIOUS="question_webwork">
+        <FIELDS>
+            <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="true" ENUM="false" NEXT="question_webwork"/>
+            <FIELD NAME="question_webwork" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="id" NEXT="html"/>
+            <FIELD NAME="html" TYPE="text" LENGTH="medium" NOTNULL="true" SEQUENCE="false" ENUM="false" PREVIOUS="question_webwork" NEXT="seed" />
+            <FIELD NAME="seed" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="1" SEQUENCE="false" ENUM="false" PREVIOUS="html"/>
+        </FIELDS>
+        <KEYS>
+            <KEY NAME="primary" TYPE="primary" FIELDS="id" COMMENT="Primary key for question_webwork_derived" NEXT="question_webwork"/>
+            <KEY NAME="question_webwork" TYPE="foreign" FIELDS="question_webwork" REFTABLE="question_webwork" REFFIELDS="id" PREVIOUS="primary"/>
         </KEYS>
     </TABLE>
   </TABLES>

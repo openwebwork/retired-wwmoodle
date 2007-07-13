@@ -1,4 +1,4 @@
-<?php // $Id: qtype_webwork.php,v 1.1.1.1 2007-07-11 18:29:49 gage Exp $
+<?php // $Id: qtype_webwork.php,v 1.2 2007-07-13 11:31:21 mleventi Exp $
 /**
  * The language strings for the QTYPENAME question type.
  *    
@@ -17,6 +17,7 @@ $string['error_client_call'] = 'Error in communication with the Problem Server.'
 $string['edit_header'] = 'WeBWorK';
 $string['edit_code'] = 'Code';
 $string['edit_seed'] = 'Seed';
+$string['edit_trials'] = 'Trials';
 // TODO add any other requred strings.
 
 ?>

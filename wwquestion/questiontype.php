@@ -57,21 +57,55 @@ class webwork_qtype extends default_questiontype {
         // $question object, which has all the post data from editquestion.html
         // Save question options in question_webwork table
         if ($record = get_record("question_webwork", "question", $question->id)) {
-            // No need to do anything, since the answer IDs won't have changed
-            // But we'll do it anyway, just for robustness
+            //get rid of all the derived questions based on this one
+            $this->delete_derived_questions($question->id);
+            
             $record->code = base64_encode(stripslashes($question->code));
             $record->seed = $question->seed;
-            if (!update_record("question_webwork", $record)) {
+            $record->trials = $question->trials;
+            $result = update_record("question_webwork", $record);
+            if (!$result) {
                 $result->error = "Could not update quiz webwork options! (id=$record->id)";
                 return $result;
             }
+            
         } else {
             unset($record);
             $record->question    = $question->id;
             $record->code = base64_encode(stripslashes($question->code));
             $record->seed = $question->seed;
-            if (!insert_record("question_webwork", $record)) {
+            $record->trials = $question->trials;
+            $result = insert_record("question_webwork", $record);
+            if (!$result) {
                 $result->error = "Could not insert quiz webwork options!";
+                return $result;
+            }
+            $record->id = $result;
+        }
+        
+        return $this->create_derived_questions($record);
+    }
+    function delete_derived_questions($questionid) {
+        delete_records("question_webwork_derived", "question_webwork", $questionid);
+        return true;
+    }
+    function create_derived_questions($question) {
+        $code = $question->code;
+        $seed = $question->seed;
+        $trials = $question->trials;
+        $parentid = $question->id;
+        
+        $params = array('code' => $code, 'seed' => $seed, 'trials' => $trials);
+        $client = new problemserver_client();
+        $response = $client->handler('generateProblems',$params);
+        
+        $record->question_webwork = $parentid;
+        foreach($response as $problem) {
+            $record->html = $problem['html'];
+            $record->seed = $problem['seed'];
+            $result = insert_record("question_webwork_derived",$record);
+            if (!$result) {
+                $result->error = "Could not insert quiz webwork derived options!";
                 return $result;
             }
         }
@@ -84,7 +118,8 @@ class webwork_qtype extends default_questiontype {
      * @return boolean to indicate success of failure.
      */
     function delete_question($questionid) {
-        delete_records("question_webwork", "question", $questionid);   
+        $this->delete_derived_questions($questionid);
+        delete_records("question_webwork", "question", $questionid);  
         return true;
     }
     
@@ -92,13 +127,40 @@ class webwork_qtype extends default_questiontype {
     * @desc Creates an empty response before student answers a question. This contains the possibly randomized seed for that particular student. Sticky seeds are created here.
     */
     function create_session_and_responses(&$question, &$state, $cmoptions, $attempt) {        
-        //if question seed is 0, we want a random seed for the student
-        if($question->seed == "0") {
-            srand(time());
-            $random = rand(0,1000);
-            $state->responses['seed'] = $random;
-        } else {
-            $state->responses['seed'] = $question->seed;
+        //here we get the derived results for this question
+        $results = get_records("question_webwork_derived","question_webwork",$question->id,'','id');
+        if(!$results) {
+            print_error(get_string('error_db_webwork_derived','qtype_webwork'));
+            return false;
+        }
+        //make sure its not 0
+        if(count($results) == 0) {
+            print_error(get_string('error_no_webwork_derived','qtype_webwork'));
+            return false;
+        }
+        srand(time());
+        $random = rand(0,count($results)-1);
+        $values = array_values($results);
+        $derivedid = $values[$random]->id;
+        
+        //get the actual data
+        $results = get_record('question_webwork_derived',"id",$derivedid);
+        $state->responses['seed'] = $results->seed;
+        $state->responses['derivedid'] = $derivedid;
+        
+        $unparsedhtml = base64_decode($results->html);
+        //parse source to figure out the fields
+        $parser = new HtmlParser($unparsedhtml);
+        $currentselect = "";
+        while($parser->parse()) {
+            if ($parser->iNodeType == NODE_TYPE_ELEMENT) {
+                $nodename = $parser->iNodeName;
+                $name = $parser->iNodeAttributes['name'];
+                if(($nodename == "INPUT") || ($nodename == "SELECT") || ($nodename == "TEXTAREA")) {
+                    //THIS IS A FIELD WE NEED TO KNOW ABOUT
+                    $state->responses['answers'][$name] = "";
+                }
+            }   
         }
         return true;
     }
@@ -132,42 +194,18 @@ class webwork_qtype extends default_questiontype {
     function print_question_formulation_and_controls(&$question, &$state, $cmoptions, $options) {
         global $CFG;
         $readonly = empty($options->readonly) ? '' : 'disabled="disabled"';
-
         //Formulate question image and text
         $questiontext = $this->format_text($question->questiontext,
                 $question->questiontextformat, $cmoptions);
         $image = get_question_image($question, $cmoptions->course);
-            
-        //FIXME the problem code comes into this function unencoded, need encoding for transport
-        $code = base64_encode($question->code);
         
-        //Get previous answers to send to the server
-        $answerarray = array();
-        foreach($state->responses as $key => $value) {
-            array_push($answerarray, array('field' => $key, 'answer'=> $value));
-        }
+        $derivedid = $state->responses['derivedid'];
+        $result = get_record('question_webwork_derived','id',$derivedid);
+        $unparsedhtml = base64_decode($result->html);
         
-        //echo "PRINT" . $state->responses['seed'];
-        //echo "PRINT" . var_dump($state);
-        $params = array('request' => array(
-            'id' => '5',
-            'code' => $code,
-            'seed' => $state->responses['seed'],
-            'answers' => $answerarray,
-            'displayMode' => PROBLEMSERVER_DISPLAYMODE
-        ));
-        $client = new problemserver_client();
-        $response = $client->handler('renderProblem',$params);
-        $unparsedhtml = base64_decode($response['body_text']);
-        $problemhtml = "";
         //new array keyed by field
-        $fieldhash = array();
-        //put the answer response from the server into state
-        $answerfields = $response['answers'];
-        foreach($answerfields as $answerobj) {
-            $state->responses[$answerobj['field']] = $answerobj['answer'];
-            $fieldhash[$answerobj['field']] = $answerobj;
-        }
+        $fieldhash = $state->responses['answers'];
+        $answerfields = $fieldhash;
         
         $parser = new HtmlParser($unparsedhtml);
         $currentselect = "";
@@ -216,25 +254,18 @@ class webwork_qtype extends default_questiontype {
         //echo "GRADE";
         //var_dump($state);
         $code = base64_encode($question->code);
+        $seed = $state->responses['seed'];
         //get answers
         $answerarray = array();
         foreach($state->responses as $key => $value) {
             array_push($answerarray, array('field' => $key, 'answer'=> $value));
         }
         
-        $params = array('request' => array(
-            'id' => '5',
-            'code' => $code,
-            'seed' => $state->responses['seed'],
-            'answers' => $answerarray,
-            'displayMode' => PROBLEMSERVER_DISPLAYMODE
-        ));
+        $params = array('code'=>$code, 'seed'=>$seed, 'answers'=>$answerarray);
         $client = new problemserver_client();
-        //var_dump($params);
+        $response = $client->handler('checkAnswers',$params);
         
-        $response = $client->handler('renderProblem',$params);
-        
-        $answers = $response['answers'];
+        $answers = $response;
         $state->raw_grade = 0;
         $total = 0;
         $num = 0;
@@ -251,6 +282,12 @@ class webwork_qtype extends default_questiontype {
 
         // mark the state as graded
         $state->event = ($state->event ==  QUESTION_EVENTCLOSE) ? QUESTION_EVENTCLOSEANDGRADE : QUESTION_EVENTGRADE;
+        
+        $state->responses['answers'] = array();
+        foreach ($answers as $answer) {
+            $state->responses['answers'][$answer['field']] = $answer;
+        }
+        
         return true;
         //var_dump($state);
     }
@@ -278,25 +315,25 @@ class webwork_qtype extends default_questiontype {
     function get_correct_responses(&$question, &$state) {
         
         $code = base64_encode($question->code);
-        //var_dump($state);
-        $params = array('request' => array(
-            'id' => '5',
-            'code' => $code,
-            'seed' => $state->responses['seed'],
-            'answers' => array(array()),
-            'displayMode' => PROBLEMSERVER_DISPLAYMODE
-        ));
-        $client = new problemserver_client();
-        //var_dump($params);
-        $response = $client->handler('renderProblem',$params);
+        $seed = $state->responses['seed'];
         
-        $answers = $response['answers'];
+        //tricks checkAnswer into believing we are sending an anwer
+        $answerarray = array(array('field'=>'','answer'=>''));
+
+        
+        $params = array('code'=>$code, 'seed'=>$seed, 'answers'=>$answerarray);
+        $client = new problemserver_client();
+        $response = $client->handler('checkAnswers',$params);
+        $answers = $response;
         $ret = array();
+        $ret['answers'] = array();
         foreach ($answers as $answer) {
-            $ret[$answer['field']] = $answer['correct'];
+            $ret['answers'][$answer['field']] = $answer;
+            $ret['answers'][$answer['field']]['answer'] = $answer['correct'];
         }
         //push the seed onto the answer array, keep track of what seed these are for.
         $ret['seed'] = $state->responses['seed'];
+        $ret['derivedid'] = $state->responses['derivedid'];
         return $ret;
     }
     
