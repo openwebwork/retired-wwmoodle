@@ -2,6 +2,8 @@
 
 require_once("$CFG->libdir/soap/nusoap.php");
 
+require_once("htmlparser.php");
+
 //Path to the WSDL file on the Webwork Server
 define('PROBLEMSERVER_WSDL','http://128.151.231.20/problemserver_wsdl/');
 
@@ -29,8 +31,6 @@ class webwork_qtype extends default_questiontype {
     function name() {
         return 'webwork';
     }
-    
-    
 
     /**
      * @desc Retrieves the seed and decoded code out of the question_webwork table.
@@ -157,32 +157,47 @@ class webwork_qtype extends default_questiontype {
             'displayMode' => PROBLEMSERVER_DISPLAYMODE
         ));
         $client = new problemserver_client();
-        //var_dump($params);
         $response = $client->handler('renderProblem',$params);
-        //var_dump($response);
-        //var_dump($response);
-        $problemhtml = base64_decode($response['body_text']);
-        
-        
-        //change the form fields so moodle likes them
+        $unparsedhtml = base64_decode($response['body_text']);
+        $problemhtml = "";
+        //new array keyed by field
+        $fieldhash = array();
+        //put the answer response from the server into state
         $answerfields = $response['answers'];
         foreach($answerfields as $answerobj) {
             $state->responses[$answerobj['field']] = $answerobj['answer'];
-            $search = $search = 'NAME=' . '"' . $answerobj['field'] . '" VALUE=' . '"' . '">';
-            $replace = 'NAME=' . '"resp' . $question->id . "_" . $answerobj['field'] . '" VALUE=' . '"' . $answerobj['answer'] . '"';
-            $feedbackimg = "";
-            if($state->event == QUESTION_EVENTGRADE) {
-                if($answerobj['score'] == 1) {
-                    $class = question_get_feedback_class(1);
-                    //$feedbackimg = question_get_feedback_image(1);
-                } else {
-                    $class = question_get_feedback_class(0);
-                    //$feedbackimg = question_get_feedback_image(0);
+            $fieldhash[$answerobj['field']] = $answerobj;
+        }
+        
+        $parser = new HtmlParser($unparsedhtml);
+        $currentselect = "";
+        while($parser->parse()) {
+            //change some attributes of html tags for moodle compliance
+            if ($parser->iNodeType == NODE_TYPE_ELEMENT) {
+                $nodename = $parser->iNodeName;
+                $name = $parser->iNodeAttributes['name'];
+                //handle generic change of node's attribute name
+                if(($nodename == "INPUT") || ($nodename == "SELECT") || ($nodename == "TEXTAREA")) {
+                    $parser->iNodeAttributes['name'] = 'resp' . $question->id . '_' . $name;
+                    if(($state->event == QUESTION_EVENTGRADE) && (isset($fieldhash[$name]))) {
+                        $parser->iNodeAttributes['class'] = $parser->iNodeAttributes['class'] . question_get_feedback_class($fieldhash[$name]['score']);
+                    }
                 }
-                $replace .= ' CLASS="' . $class . '"';
+                //handle specific change
+                if($nodename == "INPUT") {
+                    //put submitted value into field
+                    if(isset($fieldhash[$name])) {
+                        $parser->iNodeAttributes['value'] = $fieldhash[$name]['answer'];
+                    }
+                } else if($nodename == "SELECT") {
+                    $currentselect = $name;    
+                } else if($nodename == "OPTION") {
+                    if($parser->iNodeAttributes['value'] == $fieldhash[$currentselect]['answer'])
+                        $parser->iNodeAttributes['selected'] = '1';
+                } else if($nodename == "TEXTAREA") {
+                }
             }
-            $replace .= ">";// . $feedbackimg;//<div class='feedback'>" . $answerObj['answer_msg'] . "</div>";
-            $problemhtml = str_replace($search,$replace,$problemhtml);
+            $problemhtml .= $parser->printTag();
         }
         
         //for the seed form field
@@ -419,6 +434,9 @@ class problemserver_client {
             return $result;
         }
 }
+
+
+
 // Register this question type with the system.
 question_register_questiontype(new webwork_qtype());
 ?>
