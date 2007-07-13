@@ -203,7 +203,7 @@ class webwork_qtype extends default_questiontype {
         
         //new array keyed by field
         $fieldhash = $state->responses['answers'];
-        $answerfields = $fieldhash;
+        $answerfields = array();
         
         $parser = new HtmlParser($unparsedhtml);
         $currentselect = "";
@@ -217,6 +217,9 @@ class webwork_qtype extends default_questiontype {
                     $parser->iNodeAttributes['name'] = 'resp' . $question->id . '_' . $name;
                     if(($state->event == QUESTION_EVENTGRADE) && (isset($fieldhash[$name]))) {
                         $parser->iNodeAttributes['class'] = $parser->iNodeAttributes['class'] . question_get_feedback_class($fieldhash[$name]['score']);
+                    }
+                    if(!strstr($name,'previous')) {
+                        $answerfields[$name] = $fieldhash[$name];
                     }
                 }
                 //handle specific change
@@ -253,7 +256,6 @@ class webwork_qtype extends default_questiontype {
         //var_dump($state);
         $code = base64_encode($question->code);
         $seed = $state->responses['seed'];
-        echo  $seed;
         //get answers
         $answerarray = array();
         foreach($state->responses as $key => $value) {

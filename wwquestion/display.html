@@ -15,16 +15,24 @@
     <?php if($state->event == QUESTION_EVENTGRADE) { ?>
     <table class="answer">
       <tr class="header">
+        <th class="c0"></th>
+        <th class="c0"></th>
         <th class="c0">Result</th>
         <th class="c0">Answer</th>
         <th class="c0">Preview</th>
         <th class="c0">Evaluated</th>
         <th class="c0">Errors</th>
       </tr>
+      <?php $i = 1; ?>
       <?php $row = 1; foreach ($answerfields as $answerobj) { ?>
       <tr class="<?php echo 'r'.$row = $row ? 0 : 1; ?>">
+        <td class="c0">
+            <?php echo $i . ')'; ?>
+        </td>
+        <td class="c0">
+             <?php echo question_get_feedback_image($answerobj['score']); ?>
+        </td>
         <td class="c0" style="width: 15%;">
-          <?php echo question_get_feedback_image($answerobj['score']); ?>
           <?php if($answerobj['score'] == 1) { $class = 'correct'; echo "Correct"; } else { $class = 'incorrect'; echo "Incorrect"; } ?>
         </td>
         <td class="c0" style="width: 15%;">
@@ -40,6 +48,7 @@
           <?php echo $answerobj['answer_msg']; ?>
         </td>
       </tr>
+      <?php $i++; ?>
     <?php } ?>
   </table>
   <?php } ?>
