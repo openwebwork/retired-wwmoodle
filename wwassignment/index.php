@@ -1,5 +1,5 @@
 <?php
-// $Id: index.php,v 1.5 2007-07-01 20:44:13 mleventi Exp $
+// $Id: index.php,v 1.6 2007-07-18 17:58:06 mleventi Exp $
 
 
 /// This page lists all the instances of wwassignment in a particular course
@@ -66,16 +66,15 @@
             $wwassignmentsetinfo = $webworkclient->get_assignment_data($webworkcourse,$wwassignment->webwork_set,false);
             if (!$wwassignment->visible) {
                 //Show dimmed if the mod is hidden
-                $link = "<a class=\"dimmed\" href=\"view.php?id=$wwassignment->coursemodule\">$wwassignmentsetinfo->name</a>";
+                $link = "<a class=\"dimmed\" href=\"view.php?id=$wwassignment->coursemodule\">$wwassignment->name</a>";
             } else {
                 //Show normal if the mod is visible
-                $setinfoname=$wwassignmentsetinfo['name'];
-                $link = "<a href=\"view.php?id=$wwassignment->coursemodule\">$setinfoname</a>";
+                $link = "<a href=\"view.php?id=$wwassignment->coursemodule\">$wwassignment->name</a>";
             }
             if ($course->format == "weeks" or $course->format == "topics") {
                 $table->data[] = array ($wwassignment->section, $link, strftime("%c", $wwassignmentsetinfo['open_date']), strftime("%c", $wwassignmentsetinfo['due_date']));
             } else {
-                $table->data[] = array ($link, strftime("%c", $wwassignmentsetinfo->open_date), strftime("%c", $wwassignmentsetinfo->due_date));
+                $table->data[] = array ($link, strftime("%c", $wwassignmentsetinfo['open_date']), strftime("%c", $wwassignmentsetinfo['due_date']));
             }
         }
     }

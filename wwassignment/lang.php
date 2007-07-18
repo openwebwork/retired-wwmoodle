@@ -1,5 +1,5 @@
 <?php
-// $Id: lang.php,v 1.5 2007-07-12 18:35:32 mleventi Exp $
+// $Id: lang.php,v 1.6 2007-07-18 17:58:06 mleventi Exp $
 // language strings for wwmoodle_set
 // TODO: merge with proper language stuff
 
@@ -18,12 +18,17 @@ $string['go_to_webwork'] = "Administer the WeBWorK portion of this course.";
 $string['iframeNoShow-1'] = "If you are unable to view this problem set, please ";
 $string['iframeNoShow-2'] = "click here";
 
+//Defining New Module without Block
+$string['mainpage_link_desc'] = 'You need to create the webwork course mapping by creating a WeBWorK link block.';
+$string['mainpage_link_name'] = 'Course Page';
+
 //Course Link form
 $string['course_initialization'] = 'Linking to WeBWorK';
 $string['webwork_course'] = 'WeBWorK Course';
 
 //Set Link form
 $string['set_initialization'] = 'Linking to WeBWorK Problem Set';
+$string['wwassignmentname'] = 'Name';
 $string['webwork_set'] = 'WeBWorK Set';
 $string['instructor_page_link_desc'] = 'Link to the Instructor Section of WeBWorK';
 $string['instructor_page_link_name'] = 'Go To WeBWorK Instructor Tools';

@@ -1,0 +1,37 @@
+Webwork <-> Moodle Assignment Type (Bridge 1)
+Maintainer: Matthew Leventi (mleventi@gmail.com)
+----------------------------------------------
+
+Description:
+This creates a WeBWorK Assignment within the Moodle system. Note that I highly recommend that you use the WeBWorK question type (bridge 2) instead of this module. Bridge 2 is much faster and more stable.
+
+Prerequisites:
+1) An installation of WeBWorK.
+2) The wwlink block should be installed in you installation of Moodle.
+
+Note: It does not matter which you install first, or if you install both of them at the same time, but the wwlink block and the wwassignment module must be present in your moodle installation before either of them is used.
+
+Installation:
+1) Copy the wwassignment folder into the mod directory
+    ex: cp -R wwassignment /your/moodle/mod
+2) Soft link the lang file in wwassignment into the moodle language directory
+    ex: ln -s /your/moodle/mod/wwassignment/lang.php /your/moodle/lang/en_utf8/wwassignment.php
+3) Point your browser to the moodle admin page
+    ex : http://www.example.org/moodle/admin
+    
+You should now get a confirmation screen that the wwassignment database tables have been setup.
+
+Configuration:
+1) In the admin control panels of the moodle site go to modules/activities WeBWorK Problem Set settings.
+
+wwassignment_webworkurl: The root URL of your webwork installation.
+    ex: http://www.example.org/webwork2/
+
+wwassignment_rpc_wsdl: The URL of the WSDL file location in your webwork installation.
+    ex: http://www.example.org/webwork2/WSDL.wsdl
+
+wwassignment_rpc_key: The authentication key that was set in webwork.
+
+
+Use per Course:
+1) Consult the README for the wwlink block and set up the webwork <-> moodle course link.

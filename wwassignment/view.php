@@ -1,5 +1,5 @@
 <?php
-// $Id: view.php,v 1.4 2007-06-26 06:46:33 mleventi Exp $
+// $Id: view.php,v 1.5 2007-07-18 17:58:06 mleventi Exp $
 
 /// This page prints a particular instance of wwassignment
 /// (Replace wwassignment with the name of your module)
@@ -22,12 +22,6 @@ if($id) {
     if (! $wwassignment = get_record("wwassignment", "id", $cm->instance)) {
         error("Course module is incorrect");
     }
-    //This cleans up the installation of the bridge.
-    if  ($wwassignment->webwork_set == "undefined") {
-        delete_records("wwassignment","webwork_set","undefined");
-        delete_course_module($cm->id);
-        redirect("../../course/view.php?id=$course->id");
-    }
 } else {
     
     if (! $wwassignment = get_record("wwassignment", "id", $a)) {
@@ -38,14 +32,10 @@ if($id) {
     }
     if (! $cm = get_coursemodule_from_instance("wwassignment", $wwassignment->id, $course->id)) {
         error("Course Module ID was incorrect");
-    }
-    if ($wwassignment->webwork_set == "undefined") {
-        delete_records("wwassignment","webwork_set","undefined");
-        delete_course_module($cm->id);
-        redirect("../../course/view.php?id=$course->id");
-        die();
-    }   
+    }  
 }
+$courseid = $course->id;
+
 require_login($course->id);
 
 $webworksetlink = wwassignment_view_link($wwassignment->id);

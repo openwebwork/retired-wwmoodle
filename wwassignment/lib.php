@@ -1,11 +1,15 @@
 <?php
-// $Id: lib.php,v 1.18 2007-07-12 18:35:32 mleventi Exp $
+// $Id: lib.php,v 1.19 2007-07-18 17:58:06 mleventi Exp $
 
 require_once("$CFG->libdir/soap/nusoap.php");
 
 define('WWASSIGNMENT_WEBWORK_URL', $CFG->wwassignment_webworkurl);
 define('WWASSIGNMENT_WEBWORK_WSDL', $CFG->wwassignment_rpc_wsdl);
 define('WWASSIGNMENT_WEBWORK_KEY',$CFG->wwassignment_rpc_key);
+
+////////////////////////////////////////////////////////////////
+//Functions that insure creation of l
+////////////////////////////////////////////////////////////////
 
 /**
 * @desc Creates an auto_login link to the URL of the webwork problem set pointed to by wwassignmentid for the current user. (will force set creation if necessary)
@@ -15,22 +19,20 @@ define('WWASSIGNMENT_WEBWORK_KEY',$CFG->wwassignment_rpc_key);
 function wwassignment_view_link($wwassignmentid) {
     global $COURSE,$USER;
     
-    $webworkclient =& new webwork_client();
+    $webworkclient = new webwork_client();
+    
     $webworkcourse = _wwassignment_mapped_course($COURSE->id,false);
     $webworkset = _wwassignment_mapped_set($wwassignmentid,false);
+    
     $webworkuser = $webworkclient->mapped_user($webworkcourse,$USER->username);
     if($webworkuser == -1) {
         $tempuser = $USER;
         $newuser = $webworkclient->create_user($webworkcourse,$tempuser);
-        $webworkuser = $webworkclient->mapped_user($webworkcourse,$USER->username,false); 
     }
     
     $webworksetuser = $webworkclient->mapped_user_set($webworkcourse,$webworkuser,$webworkset);
     if($webworksetuser == -1) {
-        //try and do it now
         $newsetuser = $webworkclient->create_user_set($webworkcourse,$webworkuser,$webworkset);
-        //AGAIN FOR GOOD MEASURE
-        $webworksetuser = $webworkclient->mapped_user_set($webworkcourse,$webworkuser,$webworkset,false);
     }
     
     $key = $webworkclient->login_user($webworkcourse,$webworkuser,false);
@@ -45,7 +47,7 @@ function wwassignment_view_link($wwassignmentid) {
 */
 function wwassignment_edit_set_link($wwassignmentid) {
     global $COURSE,$USER;
-    $webworkclient =& new webwork_client();
+    $webworkclient = new webwork_client();
     
     //IS THE COURSE MAPPED?
     $webworkcourse = _wwassignment_mapped_course($COURSE->id,false);
@@ -58,8 +60,6 @@ function wwassignment_edit_set_link($wwassignmentid) {
         //try and create a teacher
         $tempuser = $USER;
         $newuser = $webworkclient->create_user($webworkcourse,$tempuser,'10');
-        //AGAIN FOR GOOD MEASURE
-        $webworkuser = $webworkclient->mapped_user($webworkcourse,$USER->username,false);
     }
     $key = $webworkclient->login_user($webworkcourse,$webworkuser,false);
     return _wwassignment_link_to_edit_set_auto_login($webworkcourse,$webworkset,$webworkuser,$key);
@@ -71,7 +71,7 @@ function wwassignment_edit_set_link($wwassignmentid) {
 */
 function wwassignment_instructor_page_link() {
     global $COURSE,$USER;
-    $webworkclient =& new webwork_client();
+    $webworkclient = new webwork_client();
     
     $webworkcourse = _wwassignment_mapped_course($COURSE->id,false);
     //IS THE USER MAPPED?
@@ -80,9 +80,7 @@ function wwassignment_instructor_page_link() {
         //USER WAS NOT FOUND, wasnt mapped
         //try and create a teacher
         $tempuser = $USER;
-        $newuser = $webworkclient->create_user($webworkcourse,$tempuser,'10');
-        //AGAIN FOR GOOD MEASURE
-        $webworkuser = $webworkclient->mapped_user($webworkcourse,$USER->username,false); 
+        $newuser = $webworkclient->create_user($webworkcourse,$tempuser,'10'); 
     }
     $key = $webworkclient->login_user($webworkcourse,$webworkuser,false);
     
@@ -94,45 +92,30 @@ function wwassignment_instructor_page_link() {
 */
 function wwassignment_add_instance($wwassignment) {
     global $COURSE,$SESSION,$USER;
+        
+    //Get data about the set from moodle
+    $webworkclient =& new webwork_client();
+    $webworkcourse = _wwassignment_mapped_course($COURSE->id);
+    $webworksetdata = $webworkclient->get_assignment_data($webworkcourse,$wwassignment->webwork_set,false);
+        
+    //Attaching Moodle Set to WeBWorK Set
+    $returnid = insert_record('wwassignment',$wwassignment);
     
-    
-    if(isset($wwassignment->webwork_course)) {
-        //Attaching Moodle Course to WeBWorK Course
-        $wwassignment->course = $COURSE->id;
-        $returnid = insert_record('wwassignment_bridge',$wwassignment);
-        $wwassignment->webwork_set = 'undefined';
-        $returnid = insert_record('wwassignment',$wwassignment);
-        $webworkclient =& new webwork_client();
-        if($webworkclient->mapped_user($wwassignment->webwork_course,$USER->username) == -1) {
-            $webworkclient->create_user($wwassignment->webwork_course,$USER,'10');
-        }
-        return $returnid;
-    }
-    if(isset($wwassignment->webwork_set)) {
-        $webworkclient =& new webwork_client();
-        $webworkcourse = _wwassignment_mapped_course($COURSE->id);
-        $webworksetdata = $webworkclient->get_assignment_data($webworkcourse,$wwassignment->webwork_set,false);
-        //Attaching Moodle Set to WeBWorK Set
-        $wwassignment->course = $COURSE->id;
-        $wwassignment->name = get_string('set_name','wwassignment') . ' ' . $webworksetdata['set_id'];
-        $returnid = insert_record('wwassignment',$wwassignment);
-        //GET TIMEDUE INFO AND ADD AN EVENT
-       
-        if(isset($webworksetdata)) {
-            $event = NULL;
-            $event->name = get_string('set_name','wwassignment') . ' ' . $webworksetdata['set_id'];
-            $event->description = '';
-            $event->courseid = $COURSE->id;
-            $event->groupid = 0;
-            $event->userod = 0;
-            $event->modulename = 'wwassignment';
-            $event->instance = $returnid;
-            $event->eventtype = 'due';
-            $event->timestart = $webworksetdata['due_date'];
-            $event->timeduration = 0;
-            if(!add_event($event)) {
-                error_log(get_string('event_creation_error','wwassignment'));
-            }
+    //GET TIMEDUE INFO AND ADD AN EVENT
+    if(isset($webworksetdata)) {
+        $event = NULL;
+        $event->name = $wwassignment->name;
+        $event->description = '';
+        $event->courseid = $COURSE->id;
+        $event->groupid = 0;
+        $event->userod = 0;
+        $event->modulename = 'wwassignment';
+        $event->instance = $returnid;
+        $event->eventtype = 'due';
+        $event->timestart = $webworksetdata['due_date'];
+        $event->timeduration = 0;
+        if(!add_event($event)) {
+            error_log(get_string('event_creation_error','wwassignment'));
         }
     }
     return $returnid;
@@ -149,17 +132,16 @@ function wwassignment_update_instance($wwassignment) {
     $webworkset = _wwassignment_mapped_set($wwassignment->instance,false);
     $webworksetdata = $webworkclient->get_assignment_data($webworkcourse,$webworkset,false);
     if(isset($webworksetdata)) {
-        $wwassignment->name = get_string('set_name','wwassignment') . ' ' . $webworksetdata['set_id'];
         if($returnid = update_record('wwassignment',$wwassignment)) {
             $event = NULL;
             if($event->id = get_field('event','id','modulename','wwassignment','instance',$wwassignment->id)) {
-                $event->name = get_string('set_name','wwassignment') . ' ' . $webworksetdata['set_id'];
+                $event->name = $wwassignment->name;
                 $event->timestart = $webworksetdata['due_date'];
                 $rs = update_event($event);
                 error_log('updating the event'.$rs);
             } else {
                 $event = NULL;
-                $event->name        = get_string('set_name','wwassignment') . ' ' . $webworksetdata['set_id'];
+                $event->name        = $wwassignment->name;
                 $event->description = '';
                 $event->courseid    = $COURSE->id;
                 $event->groupid     = 0;
@@ -189,7 +171,6 @@ function wwassignment_delete_instance($id) {
     }
 
     # Delete any dependent records here #
-
     if (! delete_records('wwassignment', 'id', $wwassignment->id)) {
         $result = false;
     }
@@ -248,10 +229,20 @@ function wwassignment_print_recent_activity($course, $isteacher, $timestart) {
 }
 
 /**
-* @desc Function that is run by the cron job.
+* @desc Function that is run by the cron job. This makes sure that all data is pushed to webwork.
 */
 function wwassignment_cron () {
-        return true;
+    //student role
+    
+    //give me all the courses using webwork problem sets
+    /*$records = get_records('wwassignment_bridge');
+    foreach($records as $record) {
+        $moodlecourse = $record->course;
+        $webworkcourse = $record->webwork_course;
+        _wwassignment_synchronize($moodlecourse);
+    }*/
+    return true;
+
 }
 
 /**
@@ -281,29 +272,7 @@ function wwassignment_grades($wwassignmentid) {
         $studentgrades->grades[$student->id] = $gradearray[$i];
         $i++;
     }
-    $studentgrades->maxgrade = $webworkclient->get_max_grade($webworkcourse,$webworkset);
-    
-    /*foreach( $students as $student ) {
-        $webworkuser = $webworkclient->mapped_user($webworkcourse,$student->username);
-        if($webworkuser != -1) {
-            $webworkuserset = $webworkclient->mapped_user_set($webworkcourse,$webworkuser,$webworkset);
-            if($webworkuserset != -1)
-            {
-                $studentproblems = $webworkclient->get_user_problems($webworkcourse,$webworkuser,$webworkset);
-                $finalgrade = 0.0;
-                foreach( $studentproblems as $problem ) {
-                    $finalgrade += $problem->status;
-                }
-            } else {
-                $finalgrade = 0.0;
-            }
-        } else {
-            $finalgrade = 0.0;
-        }       
-        $studentgrades->grades[$student->id] = $finalgrade;
-     }
-    
-    $studentgrades->maxgrade = $webworkclient->get_max_grade($webworkcourse,$webworkset);*/    
+    $studentgrades->maxgrade = $webworkclient->get_max_grade($webworkcourse,$webworkset); 
     return $studentgrades;
 }
 
@@ -363,6 +332,47 @@ function wwassignment_refresh_events($courseid = 0) {
 // internal functions start with _wwassignment
 ///////////////////////////////////////////////////////////////////////////////////
 
+////////////////////////////////////////////////////////////////
+//functions that synchronize webwork data
+////////////////////////////////////////////////////////////////
+/**
+* @desc Insures that all students in the moodle course exist in the webwork course (only one way).
+* @param integer $courseid Moodle Course ID.
+* @param integer $wwassignment default is -1, which means the function will synchronize all assignments in a course.
+* @return true
+*/
+function _wwassignment_synchronize($courseid,$wwassignmentid=-1) {
+    $newones = array();
+    $webworkclient = new webwork_client();
+    $roleid = get_field('role','id','name','student');
+    $context = get_context_instance(CONTEXT_COURSE,$courseid);
+    $users = get_role_users($roleid,$context);
+    
+    if($wwassignmentid == -1) {
+        $records = get_records('wwassignment','course',$courseid);
+    } else {
+        $records = get_records('wwassignment','id',$wwassignmentid);
+    }
+    
+    foreach($users as $user) {
+        $webworkuser = $user->username;
+        $webworkuser = $webworkclient->mapped_user($webworkcourse,$webworkuser);
+        if($webworkuser == -1) {
+            $webworkuser = $user->username;
+            //this user isnt mapped create him/her
+            $webworkclient->create_user($webworkcourse,$user);
+        }
+        foreach($records as $wwassignment) {
+            $webworkset = $wwassignment->webwork_set;
+            $webworkuserset = $webworkclient->mapped_user_set($webworkcourse,$webworkuser,$webworkset);
+            if($webworkuserset == -1) {
+                //this user isnt in a particular set
+                $webworkclient->create_user_set($webworkcourse,$webworkuser,$webworkset);
+            }
+        }
+    } 
+    return true; 
+}
 
 ////////////////////////////////////////////////////////////////
 //functions that check mapping existance in the local db
@@ -580,10 +590,10 @@ class webwork_client {
             $record = $this->handler('get_global_set',array('courseName' => $webworkcourse, 'setID' => $webworkset));
             if(isset($record)) {
                 $setinfo = array();
-                $setinfo['open_date'] = $record->open_date;
-                $setinfo['due_date'] = $record->due_date;
-                $setinfo['set_id'] = $record->set_id;
-                $setinfo['name'] = get_string('set_name','wwassignment') . ' ' . $record->set_id; 
+                $setinfo['open_date'] = $record['open_date'];
+                $setinfo['due_date'] = $record['due_date'];
+                $setinfo['set_id'] = $record['set_id'];
+                $setinfo['name'] = $record['set_id']; 
                 return $setinfo;
             }
             if(!$silent) {
@@ -714,7 +724,7 @@ class webwork_client {
                 'permission' => $permission)));
             $this->handler('add_password',array('courseName' => $webworkcourse,'record' => array(
                 'user_id' => $userdata->username,
-                'password' => $studentid)));
+                'password' => $userdata->password)));
             return 1;
         }
         
