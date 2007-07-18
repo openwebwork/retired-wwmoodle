@@ -1,5 +1,5 @@
 <?php
-// $Id: lib.php,v 1.21 2007-07-18 18:41:41 mleventi Exp $
+// $Id: lib.php,v 1.22 2007-07-18 21:33:49 mleventi Exp $
 
 require_once("$CFG->libdir/soap/nusoap.php");
 
@@ -326,7 +326,6 @@ function wwassignment_refresh_events($courseid = 0) {
     }
     return true;
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////////
 // internal functions start with _wwassignment
