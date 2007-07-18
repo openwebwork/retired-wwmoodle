@@ -1,5 +1,5 @@
 <?php
-// $Id: lib.php,v 1.20 2007-07-18 18:06:25 mleventi Exp $
+// $Id: lib.php,v 1.21 2007-07-18 18:41:41 mleventi Exp $
 
 require_once("$CFG->libdir/soap/nusoap.php");
 
@@ -94,7 +94,7 @@ function wwassignment_add_instance($wwassignment) {
     global $COURSE,$SESSION,$USER;
         
     //Get data about the set from moodle
-    $webworkclient =& new webwork_client();
+    $webworkclient = new webwork_client();
     $webworkcourse = _wwassignment_mapped_course($COURSE->id);
     $webworksetdata = $webworkclient->get_assignment_data($webworkcourse,$wwassignment->webwork_set,false);
         
@@ -127,7 +127,7 @@ function wwassignment_add_instance($wwassignment) {
 */
 function wwassignment_update_instance($wwassignment) {
     global $COURSE;
-    $webworkclient =& new webwork_client();
+    $webworkclient = new webwork_client();
     $webworkcourse = _wwassignment_mapped_course($COURSE->id);
     $webworkset = _wwassignment_mapped_set($wwassignment->instance,false);
     $webworksetdata = $webworkclient->get_assignment_data($webworkcourse,$webworkset,false);
@@ -251,7 +251,7 @@ function wwassignment_cron() {
 */
 function wwassignment_grades($wwassignmentid) {
     global $COURSE;
-    $webworkclient =& new webwork_client();
+    $webworkclient = new webwork_client();
     $studentgrades->grades = array();
     $studentgrades->maxgrade = 0;
         //debug_log("record ".print_r($oMod,true));
