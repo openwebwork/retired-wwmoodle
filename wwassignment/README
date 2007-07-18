@@ -7,7 +7,7 @@ This creates a WeBWorK Assignment within the Moodle system. Note that I highly r
 
 Prerequisites:
 1) An installation of WeBWorK.
-2) The wwlink block should be installed in you installation of Moodle.
+2) The wwlink block should be installed in your installation of Moodle.
 
 Note: It does not matter which you install first, or if you install both of them at the same time, but the wwlink block and the wwassignment module must be present in your moodle installation before either of them is used.
 

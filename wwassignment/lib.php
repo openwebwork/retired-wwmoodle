@@ -1,5 +1,5 @@
 <?php
-// $Id: lib.php,v 1.19 2007-07-18 17:58:06 mleventi Exp $
+// $Id: lib.php,v 1.20 2007-07-18 18:06:25 mleventi Exp $
 
 require_once("$CFG->libdir/soap/nusoap.php");
 
@@ -231,7 +231,7 @@ function wwassignment_print_recent_activity($course, $isteacher, $timestart) {
 /**
 * @desc Function that is run by the cron job. This makes sure that all data is pushed to webwork.
 */
-function wwassignment_cron () {
+function wwassignment_cron() {
     //student role
     
     //give me all the courses using webwork problem sets
