@@ -1,9 +1,9 @@
 <?php
 
-class block_webwork_link extends block_base {
+class block_wwlink extends block_base {
     
     function init() {
-        $this->title = get_string('blockname','block_webwork_link');
+        $this->title = get_string('blockname','block_wwlink');
         $this->version = 2007072400;
     }
     
