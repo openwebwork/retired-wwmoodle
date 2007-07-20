@@ -1,5 +1,5 @@
 <?php
-// $Id: lib.php,v 1.22 2007-07-18 21:33:49 mleventi Exp $
+// $Id: lib.php,v 1.23 2007-07-20 18:00:28 mleventi Exp $
 
 require_once("$CFG->libdir/soap/nusoap.php");
 
@@ -131,6 +131,7 @@ function wwassignment_update_instance($wwassignment) {
     $webworkcourse = _wwassignment_mapped_course($COURSE->id);
     $webworkset = _wwassignment_mapped_set($wwassignment->instance,false);
     $webworksetdata = $webworkclient->get_assignment_data($webworkcourse,$webworkset,false);
+    $wwassignment->id = $wwassignment->instance;
     if(isset($webworksetdata)) {
         if($returnid = update_record('wwassignment',$wwassignment)) {
             $event = NULL;

@@ -14,8 +14,8 @@ Note: It does not matter which you install first, or if you install both of them
 Installation:
 1) Copy the wwassignment folder into the mod directory
     ex: cp -R wwassignment /your/moodle/mod
-2) Soft link the lang file in wwassignment into the moodle language directory
-    ex: ln -s /your/moodle/mod/wwassignment/lang.php /your/moodle/lang/en_utf8/wwassignment.php
+2) Copy the lang file in wwassignment into the moodle language directory
+    ex: cp /your/moodle/mod/wwassignment/lang.php /your/moodle/lang/en_utf8/wwassignment.php
 3) Point your browser to the moodle admin page
     ex : http://www.example.org/moodle/admin
     
