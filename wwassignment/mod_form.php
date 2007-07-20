@@ -12,7 +12,7 @@ class mod_wwassignment_mod_form extends moodleform_mod {
         $coursemapped = _wwassignment_mapped_course($COURSE->id);
         if($coursemapped == -1) {
             
-            $mform->addElement('link','mainpage',get_string('mainpage_link_desc','wwassignment'),"view.php",get_string('mainpage_link_name','wwassignment'));
+            $mform->addElement('link','mainpage',get_string('mainpage_link_desc','wwassignment'),"view.php?id=$COURSE->id",get_string('mainpage_link_name','wwassignment'));
             return;
         }
         
