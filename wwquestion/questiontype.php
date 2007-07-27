@@ -365,17 +365,33 @@ class webwork_qtype extends default_questiontype {
 
         $status = true;
 
-        $webworks = get_records('question_webwork', 'question', $question, 'id ASC');
+        $webworks = get_records('question_webwork', 'question', $question, 'id');
         //If there are webworks
         if ($webworks) {
+            //Print webworks header
             //Iterate over each webwork
             foreach ($webworks as $webwork) {
+                
                 $status = fwrite ($bf,start_tag("WEBWORK",$level,true));
-                //Print webwork contents
+                
                 fwrite ($bf,full_tag("CODE",$level+1,false,$webwork->code));
                 fwrite ($bf,full_tag("SEED",$level+1,false,$webwork->seed));
+                fwrite ($bf,full_tag("TRIALS",$level+1,false,$webwork->trials));
+                
+                $webworksderived = get_records('question_webwork_derived','question_webwork',$webwork->id);
+                if($webworksderived) {
+                    $status = fwrite ($bf,start_tag("WEBWORKDERIVED",$level+1,true));
+                    foreach ($webworksderived as $webworkderived) {
+                        fwrite ($bf,full_tag("ID",$level+2,false,$webworkderived->id));
+                        fwrite ($bf,full_tag("QUESTION_WEBWORK",$level+2,false,$webworkderived->question_webwork));
+                        fwrite ($bf,full_tag("HTML",$level+2,false,$webworkderived->html));
+                        fwrite ($bf,full_tag("SEED",$level+2,false,$webworkderived->seed));
+                    }
+                    $status = fwrite ($bf,end_tag("WEBWORKDERIVED",$level+1,true));
+                }
                 $status = fwrite ($bf,end_tag("WEBWORK",$level,true));
             }
+            //Print webworks footer
             //Now print question_webwork
             $status = question_backup_answers($bf,$preferences,$question);
         }
@@ -391,21 +407,37 @@ class webwork_qtype extends default_questiontype {
 
         $status = true;
 
-        //Get the shortanswers array
+        //Get the webworks array
         $webworks = $info['#']['WEBWORK'];
 
-        //Iterate over shortanswers
+        //Iterate over webworks
         for($i = 0; $i < sizeof($webworks); $i++) {
             $webwork_info = $webworks[$i];
 
-            //Now, build the question_shortanswer record structure
+            //Now, build the question_webwork record structure
             $webwork = new stdClass;
             $webwork->question = $new_question_id;
             $webwork->code = backup_todb($webwork_info['#']['CODE']['0']['#']);
             $webwork->seed = backup_todb($webwork_info['#']['SEED']['0']['#']);
+            $webwork->trials = backup_todb($webwork_info['#']['TRIALS']['0']['#']);
 
             //The structure is equal to the db, so insert the question_shortanswer
             $newid = insert_record("question_webwork",$webwork);
+            
+            $webworksderived = $webwork_info['#']['WEBWORKDERIVED'];
+            for($j=0; $j < sizeof($webworksderived); $j++) {
+                $webworkderived_info = $webworksderived[$j];
+                
+                $webworkderived = new stdClass;
+                $webworkderived->question_webwork = $newid;
+                $webworkderived->html = backup_todb($webworkderived_info['#']['HTML']['0']['#']);
+                $webworkderived->seed = backup_todb($webworkderived_info['#']['SEED']['0']['#']);
+                
+                $newidderived = insert_record("question_webwork_derived",$webworkderived);
+                if (!$newidderived) {
+                    $status = false;
+                }
+            }
 
             //Do some output
             if (($i+1) % 50 == 0) {
