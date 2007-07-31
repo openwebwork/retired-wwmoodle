@@ -1,5 +1,5 @@
 <?php
-// $Id: lib.php,v 1.23 2007-07-20 18:00:28 mleventi Exp $
+// $Id: lib.php,v 1.24 2007-07-31 16:38:25 gage Exp $
 
 require_once("$CFG->libdir/soap/nusoap.php");
 
@@ -497,7 +497,7 @@ class webwork_client {
                 $this->client = new soap_client(WWASSIGNMENT_WEBWORK_WSDL,'wsdl');
                 $err = $this->client->getError();
                 if ($err) {
-                    print_error(get_string('construction_error','wwassignment'));
+                    print_error(get_string('construction_error','wwassignment')."<BR>$err");
                 }
                 $this->defaultparams = array();
                 $this->defaultparams['authenKey']  = WWASSIGNMENT_WEBWORK_KEY;
@@ -528,7 +528,7 @@ class webwork_client {
                 //$result = call_user_func_array(array(&$this->client,$functioncall),$params);
                 if($err = $this->client->getError()) {
                         //print_error(get_string("rpc_fault","wwassignment') . " " . $functioncall. " ". $err);
-                        print_error(get_string('rpc_error','wwassignment'));  
+                        print_error(get_string('rpc_error','wwassignment')."<BR>$err");  
                 }
                 return $result;
         }
