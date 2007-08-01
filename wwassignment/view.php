@@ -1,5 +1,5 @@
 <?php
-// $Id: view.php,v 1.5 2007-07-18 17:58:06 mleventi Exp $
+// $Id: view.php,v 1.6 2007-08-01 03:08:09 mleventi Exp $
 
 /// This page prints a particular instance of wwassignment
 /// (Replace wwassignment with the name of your module)
@@ -33,6 +33,11 @@ if($id) {
     if (! $cm = get_coursemodule_from_instance("wwassignment", $wwassignment->id, $course->id)) {
         error("Course Module ID was incorrect");
     }  
+}
+//catch the guests
+global $USER;
+if($USER->username == 'guest') {
+    print_error('Guests cannot view WeBWorK Problem Sets');
 }
 $courseid = $course->id;
 
