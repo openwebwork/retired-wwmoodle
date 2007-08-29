@@ -5,8 +5,7 @@ require_once("$CFG->libdir/soap/nusoap.php");
 require_once("htmlparser.php");
 
 //Path to the WSDL file on the Webwork Server
-define('PROBLEMSERVER_WSDL','http://128.151.231.20/WSDL.wsdl');
-define('PROBLEMSERVER_DISPLAYMODE','images');
+define('PROBLEMSERVER_WSDL','YOUR WSDL PATH HERE');
 
 
 /**
@@ -29,6 +28,15 @@ class webwork_qtype extends default_questiontype {
     function name() {
         return 'webwork';
     }
+    
+    function _derivedquestions($derivedquestions = null) {
+        static $temp = null;
+        if($derivedquestions == null) {
+            return $temp;
+        }
+        $temp = $derivedquestions;
+        return true;
+    }
 
     /**
      * @desc Retrieves the seed and decoded code out of the question_webwork table.
@@ -41,74 +49,182 @@ class webwork_qtype extends default_questiontype {
             notify('Error: Missing question options!');
             return false;
         }
+        $question->trials = $record->trials;
         $question->seed = $record->seed;
         $question->code = base64_decode($record->code);
+        $question->codecheck = $record->codecheck;
+        $question->webworkid = $record->id;
         return true;
     }
 
     /**
-     * @desc Saves the webwork question code and default seed setting into question_webwork
+     * @desc Saves the webwork question code and default seed setting into question_webwork. Will recreate all corresponding derived questions.
      * @return boolean to indicate success of failure.
      */
     function save_question_options($question) {
-        // TODO code to save the extra data to your database tables from the
-        // $question object, which has all the post data from editquestion.html
-        // Save question options in question_webwork table
+                
+        //UPDATE OR INSERTION
         if ($record = get_record("question_webwork", "question", $question->id)) {
-            //get rid of all the derived questions based on this one
-            $this->delete_derived_questions($question->id);
-            
-            $record->code = base64_encode(stripslashes($question->code));
-            $record->seed = $question->seed;
-            $record->trials = $question->trials;
-            $result = update_record("question_webwork", $record);
-            if (!$result) {
-                $result->error = "Could not update quiz webwork options! (id=$record->id)";
-                return $result;
-            }
-            
+            $isupdate = true;
         } else {
+            $isupdate = false;
             unset($record);
-            $record->question    = $question->id;
-            $record->code = base64_encode(stripslashes($question->code));
-            $record->seed = $question->seed;
-            $record->trials = $question->trials;
-            $result = insert_record("question_webwork", $record);
-            if (!$result) {
-                $result->error = "Could not insert quiz webwork options!";
-                return $result;
+        }
+        //set new variables for update or insert
+        $record->question = $question->id;
+        $record->codecheck = $question->codecheck;
+        $record->code = base64_encode(stripslashes($question->code));
+        $record->seed = $question->seed;
+        $record->trials = $question->trials;
+        
+        //create the derived questions and check for errors
+        //$results = $question->derivedquestions;
+        
+        //do the database action on question_webwork
+        if($isupdate) {
+            $errresult = update_record("question_webwork", $record);
+            if (!$errresult) {
+                $errresult->error = "Could not update quiz webwork options! (id=$record->id)";
+                return $errresult;
+            } 
+        } else {
+            $errresult = insert_record("question_webwork", $record);
+            if (!$errresult) {
+                $errresult->error = "Could not insert quiz webwork options!";
+                return $errresult;
             }
-            $record->id = $result;
+            $record->id = $errresult; 
         }
         
-        return $this->create_derived_questions($record);
-    }
-    function delete_derived_questions($questionid) {
-        delete_records("question_webwork_derived", "question_webwork", $questionid);
+        //delete the derived questions
+        $this->delete_derived_questions($record->id);
+        
+        //do the database action on question_webwork_derived
+        $err = $this->insert_derived_questions($record->id,$this->_derivedquestions());
+        if($err != 0) {
+            return $err;
+        }
         return true;
     }
-    function create_derived_questions($question) {
-        $code = $question->code;
-        $seed = $question->seed;
-        $trials = $question->trials;
-        $parentid = $question->id;
+    
+    /**
+    * @desc Deletes all derived questions that are children of the ID passed in.
+    * @param $webworkquestionid integer The ID of the parent question
+    */
+    function delete_derived_questions($webworkquestionid) {
+        delete_records("question_webwork_derived", "question_webwork", $webworkquestionid);
+        return true;
+    }
+    
+    /**
+    * @desc Gets derived questions from a webworkquestion record object by calling the SOAP object.
+    * @param $webworkquestion The record to create from
+    * 
+    */
+    function get_derived_questions($webworkquestion) {
+        //parameters needed from the webworkquestion object
+        $code = $webworkquestion->code;
+        $seed = $webworkquestion->seed;
+        $trials = $webworkquestion->trials;
         
-        $params = array('code' => $code, 'seed' => $seed, 'trials' => $trials);
+        
+        //problem to be generated
+        $problem = array();
+        $problem['code'] = $code;
+        $problem['seed'] = $seed;
+        
+        //requested # times for generation
+        $request = array();
+        $request['trials'] = $trials;
+        $request['problem'] = $problem;
+        
+        //SOAP CALL
+        $params = array($request);
         $client = new problemserver_client();
-        $response = $client->handler('generateProblems',$params);
+        $response = $client->handler('generateProblem',$params);
+        return $response;
+    }
+    
+    
+    /**
+    * @desc Inserts the derived questions into the DB.
+    * @param $parentid The parent ID of the derived questions.
+    * @param $derivedrecordset The recordset to create from.
+    */
+    function insert_derived_questions($parentid,$derivedrecordset) {
         
-        $record->question_webwork = $parentid;
-        foreach($response as $problem) {
-            $record->html = $problem['html'];
+        foreach($derivedrecordset as $problem) {
+            unset($record);
+            //set the parent id for the derived questions
+            $record->question_webwork = $parentid;
+            $record->html = $problem['output'];
             $record->seed = $problem['seed'];
+            //initial insert
             $result = insert_record("question_webwork_derived",$record);
             if (!$result) {
                 $result->error = "Could not insert quiz webwork derived options!";
                 return $result;
             }
+            $record->id = $result;
+            
+            //brings image files to local drive
+            //THIS SHOULD ALSO DO APPLETS SOON
+            $err = $this->copy_derived_question_data($record);
+            if($err != 0) {
+                return $err;
+            }
+            
+            $result = update_record("question_webwork_derived",$record);
+            if(!$result) {
+                $result->error = "Could not update quiz webwork derived options! (id=$record->id)";
+                return $result;
+            }
+            
         }
-        return true;
+        return false;
     }
+    
+    function copy_derived_question_data(&$derivedrecord) {
+        global $CFG;
+        //make the base directory if needed
+        $dir = $CFG->dataroot . '/wwquestions';
+        mkdir($dir);
+        //make the directory for this question
+        $dir = $CFG->dataroot . '/wwquestions/'.$derivedrecord->id;
+        mkdir($dir);
+        
+        //first we need to find the image paths
+        $imagestocopy = array();
+        $problemhtml = "";
+        $unparsedhtml = base64_decode($derivedrecord->html);
+        $parser = new HtmlParser($unparsedhtml);
+        while($parser->parse()) {
+             if ($parser->iNodeType == NODE_TYPE_ELEMENT) {
+                 $nodename = $parser->iNodeName;
+                 //rewrite the images
+                 if(($nodename == "IMG") || ($nodename == "img")) {
+                     //found one
+                     $srcpath = $parser->iNodeAttributes['src'];
+                     $srcfilename = strrchr($srcpath,'/');
+                     $parser->iNodeAttributes['src'] = $CFG->wwwroot . "/question/type/webwork/file.php/wwquestions/" . $derivedrecord->id . '/' . $srcfilename;
+                     //NOTE explore the possibility of having an existence check here, filenames hashed?
+                     //copy it
+                     $err = copy($srcpath,$CFG->dataroot.'/wwquestions/'.$derivedrecord->id.$srcfilename);
+                     if($err == false) {
+                         $err->error = 'Copy Failed for: '.$srcpath;
+                         return $err;
+                     }
+                     
+                     
+                 }
+             }
+             $problemhtml .= $parser->printTag();
+        }
+        $html = base64_encode($problemhtml);
+        $derivedrecord->html = $html;
+        return false;
+    }
+    
 
     /**
      * @desc Deletes question from the question_webwork table
@@ -116,7 +232,12 @@ class webwork_qtype extends default_questiontype {
      * @return boolean to indicate success of failure.
      */
     function delete_question($questionid) {
-        $this->delete_derived_questions($questionid);
+        //Deleting the webwork derived questions
+        $records = get_records('question_webwork','question',$questionid,'','id');
+        foreach($records as $record) {
+            $this->delete_derived_questions($record->id);
+        }
+        //Deleting the webwork questions
         delete_records("question_webwork", "question", $questionid);  
         return true;
     }
@@ -124,9 +245,17 @@ class webwork_qtype extends default_questiontype {
     /**
     * @desc Creates an empty response before student answers a question. This contains the possibly randomized seed for that particular student. Sticky seeds are created here.
     */
-    function create_session_and_responses(&$question, &$state, $cmoptions, $attempt) {        
+    function create_session_and_responses(&$question, &$state, $cmoptions, $attempt) {
+        global $CFG,$USER;
+        
+        //directory housekeeping (insure directories are setup)
+        mkdir($CFG->dataroot.'/wwquestions/users');
+        mkdir($CFG->dataroot.'/wwquestions/users/'.$USER->id);
+
+        
+                
         //here we get the derived results for this question
-        $results = get_records("question_webwork_derived","question_webwork",$question->id,'','id');
+        $results = get_records("question_webwork_derived","question_webwork",$question->webworkid,'','id');
         if(!$results) {
             print_error(get_string('error_db_webwork_derived','qtype_webwork'));
             return false;
@@ -136,13 +265,17 @@ class webwork_qtype extends default_questiontype {
             print_error(get_string('error_no_webwork_derived','qtype_webwork'));
             return false;
         }
+        //pick a random question based on time
         srand(time());
         $random = rand(0,count($results)-1);
         $values = array_values($results);
         $derivedid = $values[$random]->id;
         
+        //more directory housekeeping
+        mkdir($CFG->dataroot.'/wwquestions/users/'.$USER->id.'/'.$derivedid);
+        
         //get the actual data
-        $results = get_record('question_webwork_derived',"id",$derivedid);
+        $results = get_record('question_webwork_derived','id',$derivedid);
         $state->responses['seed'] = $results->seed;
         $state->responses['derivedid'] = $derivedid;
         
@@ -190,7 +323,7 @@ class webwork_qtype extends default_questiontype {
     * @desc Prints the question. Calls the Webwork Server for appropriate HTML output and image paths.
     */
     function print_question_formulation_and_controls(&$question, &$state, $cmoptions, $options) {
-        global $CFG;
+        global $CFG,$USER;
         $readonly = empty($options->readonly) ? '' : 'disabled="disabled"';
         //Formulate question image and text
         $questiontext = $this->format_text($question->questiontext,
@@ -243,6 +376,8 @@ class webwork_qtype extends default_questiontype {
         $qid = $question->id;
         $seed = $state->responses['seed'];
         
+        //if the student has answered
+        
         include("$CFG->dirroot/question/type/webwork/display.html");
     }
     
@@ -250,22 +385,33 @@ class webwork_qtype extends default_questiontype {
     * @desc Assigns a grade for a student response. Currently a percentage right/total questions. Calls the Webwork Server to evaluate answers
     */
     function grade_responses(&$question, &$state, $cmoptions) {
-        // TODO assign a grade to the response in state.
-        //get code
-        //echo "GRADE";
-        //var_dump($state);
+        global $CFG,$USER;
+        //get code and seed of the students problem
         $code = base64_encode($question->code);
         $seed = $state->responses['seed'];
-        //get answers
+        $derivedid = $state->responses['derivedid'];
+        
+        //get answers & build answer request
         $answerarray = array();
         foreach($state->responses as $key => $value) {
             array_push($answerarray, array('field' => $key, 'answer'=> $value));
         }
         
-        $params = array('code'=>$code, 'seed'=>$seed, 'answers'=>$answerarray);
+        //build problem request
+        $problem = array();
+        $problem['code'] = $code;
+        $problem['seed'] = $seed;
+        
+        //SOAP request
+        $params = array();
+        $params['request'] = $problem;
+        $params['answers'] = $answerarray;
+        
+        //SOAP Call
         $client = new problemserver_client();
         $response = $client->handler('checkAnswers',$params);
         
+        //process output from soap & calculate score
         $answers = $response;
         $state->raw_grade = 0;
         $total = 0;
@@ -284,11 +430,33 @@ class webwork_qtype extends default_questiontype {
         // mark the state as graded
         $state->event = ($state->event ==  QUESTION_EVENTCLOSE) ? QUESTION_EVENTCLOSEANDGRADE : QUESTION_EVENTGRADE;
         
+        //put the responses into the state to remember
         $state->responses['answers'] = array();
         foreach ($answers as $answer) {
+            //parse and change the preview paths
+            $unparsedhtml = base64_decode($answer['preview']);
+            $ansparser = new HtmlParser($unparsedhtml);
+            $parsedhtml = "";
+            while($ansparser->parse()) {
+                if($ansparser->iNodeType == NODE_TYPE_ELEMENT) {
+                    $nodename = $ansparser->iNodeName;
+                    if(($nodename == 'img') || ($nodename == 'IMG')) {
+                        $srcpath = $ansparser->iNodeAttributes['src'];
+                        $srcfilename = strrchr($srcpath,'/');
+                        $newpath = "/wwquestions/users/" . $USER->id . '/' . $derivedid . '' . $srcfilename;
+                        $ansparser->iNodeAttributes['src'] = $CFG->wwwroot . "/question/type/webwork/file.php$newpath";
+                        //copy it
+                        $err = copy($srcpath,$CFG->dataroot . $newpath);
+                        if($err == false) {
+                            print_error("copy operation failed src:'$srcpath' dest:'$newpath'");
+                        }
+                    }
+                }
+                $parsedhtml .= $ansparser->printTag();
+                $answer['preview'] = $parsedhtml;
+            }
             $state->responses['answers'][$answer['field']] = $answer;
         }
-        
         return true;
         //var_dump($state);
     }
@@ -314,19 +482,31 @@ class webwork_qtype extends default_questiontype {
     * @desc Gets the correct answers from the server for the seed in state. Places them into the state->responses array.
     */
     function get_correct_responses(&$question, &$state) {
-        
+        //get code and seed of response
         $code = base64_encode($question->code);
-        
         $seed = $state->responses['seed'];
-        echo $seed;
         
-        //tricks checkAnswer into believing we are sending an anwer
-        $answerarray = array(array('field'=>'','answer'=>''));
-
+        //get empty answers & build answer request
+        $answerarray = array();
+        foreach($state->responses as $key => $value) {
+            array_push($answerarray, array('field' => $key, 'answer'=> $value));
+        }
         
-        $params = array('code'=>$code, 'seed'=>$seed, 'answers'=>$answerarray);
+        //build problem request
+        $problem = array();
+        $problem['code'] = $code;
+        $problem['seed'] = $seed;
+        
+        //SOAP request
+        $params = array();
+        $params['request'] = $problem;
+        $params['answers'] = $answerarray;
+        
+        //SOAP Call
         $client = new problemserver_client();
         $response = $client->handler('checkAnswers',$params);
+        
+        //process correct answers into fields
         $answers = $response;
         $ret = array();
         $ret['answers'] = array();
@@ -334,6 +514,7 @@ class webwork_qtype extends default_questiontype {
             $ret['answers'][$answer['field']] = $answer;
             $ret['answers'][$answer['field']]['answer'] = $answer['correct'];
         }
+        
         //push the seed onto the answer array, keep track of what seed these are for.
         $ret['seed'] = $state->responses['seed'];
         $ret['derivedid'] = $state->responses['derivedid'];
