@@ -1,5 +1,5 @@
 <?php
-// $Id: lib.php,v 1.24 2007-07-31 16:38:25 gage Exp $
+// $Id: lib.php,v 1.25 2007-08-29 18:37:55 gage Exp $
 
 require_once("$CFG->libdir/soap/nusoap.php");
 
@@ -528,7 +528,7 @@ class webwork_client {
                 //$result = call_user_func_array(array(&$this->client,$functioncall),$params);
                 if($err = $this->client->getError()) {
                         //print_error(get_string("rpc_fault","wwassignment') . " " . $functioncall. " ". $err);
-                        print_error(get_string('rpc_error','wwassignment')."<BR>$err");  
+                        print_error(get_string('rpc_error','wwassignment')."<BR>$err<BR><BR>Response:<BR>".$this->client->response );  
                 }
                 return $result;
         }
@@ -686,6 +686,7 @@ class webwork_client {
         */
         function options_course($silent = true) {
             $courselist = $this->handler('list_courses');
+            sort($courselist);
             if(isset($courselist)) {
                 $courseoptions = array();
                 foreach($courselist as $course) {
