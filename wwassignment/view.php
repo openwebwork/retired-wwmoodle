@@ -1,5 +1,5 @@
 <?php
-// $Id: view.php,v 1.6 2007-08-01 03:08:09 mleventi Exp $
+// $Id: view.php,v 1.7 2007-09-08 01:05:54 gage Exp $
 
 /// This page prints a particular instance of wwassignment
 /// (Replace wwassignment with the name of your module)
@@ -61,13 +61,15 @@ print_header("$course->shortname: $wwassignment->name", "$course->fullname", "$n
 
 
 
+// Print webwork in iframe and link to escape to have webwork in a single window
 print("<p style='font-size: smaller; color: #aaa;'>" . get_string("iframeNoShow-1", "wwassignment")
-      . "<a href='$sSetLink'>" . get_string("iframeNoShow-2", "wwassignment") . "</a>.</p>\n");
-print("<p align='center'><iframe id='wwPage' src='$webworksetlink' frameborder='1' "
+      . "<a href='$webworksetlink'>" . get_string("iframeNoShow-2", "wwassignment")
+      ."</a><p align='center'></iframe></p>\n"
+      );
+print("<iframe id='wwPage' src='$webworksetlink' frameborder='1' "
       . "width='".$CFG->wwassignment_iframewidth."' "
       . "height='".$CFG->wwassignment_iframeheight."'>"
-      . get_string("iframeNoShow-1", "wwassignment") . "<a href='$webworksetlink'>" . get_string("iframeNoShow-2", "wwassignment")
-      . "</a>.</iframe></p>\n");
+      );
 
 print("<script>ww.Init(".isteacher($course->id).")</script>");
 
