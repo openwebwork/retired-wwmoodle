@@ -24,7 +24,7 @@
     $args = explode('/', trim($relativepath, '/'));
     
     //security this should only be used for wwquestions
-    if ((count($args) < 3) || ($args[0] != 'wwquestions')) {
+    if ((count($args) < 3) || ($args[0] != '1') || ($args[1] != 'wwquestions')) {
         error('No valid arguments supplied');
     }
     
@@ -33,7 +33,7 @@
         //trying to get a user equation image
         //BEEF this up with roles etc, so teachers have access to students pics so on.
         if($args[2] != $USER->id) {
-            error('Access Denied to this Picture');
+            error('Access Denied to this Equation Image');
         }
     }
     

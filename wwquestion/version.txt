@@ -1,0 +1,10 @@
+Old versions:
+
+Version .2 (August 2007)
+* DB consistency issues fixed (thanks to Jean-Marc)
+* New code checking, makes sure PG code is correct
+* Images are now copied locally for faster problem loading
+* Minor bug Fixes
+
+Version .1 (July 2007)
+* Initial Release

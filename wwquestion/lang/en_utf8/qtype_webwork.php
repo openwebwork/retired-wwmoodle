@@ -1,4 +1,4 @@
-<?php // $Id: qtype_webwork.php,v 1.3 2007-08-29 04:34:28 mleventi Exp $
+<?php // $Id: qtype_webwork.php,v 1.4 2007-09-09 02:53:16 mleventi Exp $
 /**
  * The language strings for the QTYPENAME question type.
  *    
@@ -14,11 +14,15 @@ $string['webwork'] = 'WeBWorK';
 $string['error_client_construction'] = 'Error constructing client to Problem Server. Perhaps your WSDL Path is wrong?';
 $string['error_client_call'] = 'Error in communication with the Problem Server.';
 
-$string['edit_header'] = 'WeBWorK';
+$string['edit_codeheader'] = 'WeBWorK Code';
+$string['edit_fileheader'] = 'WeBWorK Files';
+$string['edit_optionheader'] = 'WeBWorK Options';
 $string['edit_codecheck'] = 'Code Checking';
     $string['edit_codecheck0'] = 'Turn Off (unadvised)';
     $string['edit_codecheck1'] = 'Reject Problem Seeds w/ Errors (silent)';
     $string['edit_codecheck2'] = 'Reject Question if any Errors (strict)';
+$string['edit_codefile'] = 'Question File';
+$string['edit_addcodefiles'] = 'Add More Question Files';
 $string['edit_code'] = 'Code';
 $string['edit_seed'] = 'Seed';
 $string['edit_trials'] = 'Trials';

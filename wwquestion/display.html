@@ -4,7 +4,7 @@
 <div class="qtext">
     <?php echo $problemhtml; ?>
     <input id="resp<?php echo $qid; ?>_seed" name="resp<?php echo $qid; ?>_seed" type="hidden" value="<?php echo $seed; ?>" />
-    <input id="resp<?php echo $qid; ?>_derivedid" name="resp<?php echo $qid; ?>_derivedid" type="hidden" value="<?php echo $derivedid; ?>" />
+    <input id="resp<?php echo $qid; ?>_derivationid" name="resp<?php echo $qid; ?>_derivationid" type="hidden" value="<?php echo $derivationid; ?>" />
 </div>
 
 <?php if ($image) { ?>
@@ -12,6 +12,8 @@
 <?php } ?>
 
 <div class="ablock clearfix">
+    <?php $this->print_question_submit_buttons($question, $state, $cmoptions, $options); ?>
+    <br>
     <?php if($state->event == QUESTION_EVENTGRADE) { ?>
     <table class="answer">
       <tr class="header">
@@ -59,5 +61,5 @@
     </div>
   <?php } ?>
   
-  <?php $this->print_question_submit_buttons($question, $state, $cmoptions, $options); ?>
+  
 </div>
