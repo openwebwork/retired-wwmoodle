@@ -29,13 +29,12 @@
     }
     
     //extra security for users
-    if($args[1] == 'users') {
+    /*if((count($args) > 6) && ($args[5] == 'users')) {
         //trying to get a user equation image
-        //BEEF this up with roles etc, so teachers have access to students pics so on.
-        if($args[2] != $USER->id) {
-            error('Access Denied to this Equation Image');
+        if($args[6] != $USER->id) {
+            require_capability('moodle/mod/quiz:viewreports');
         }
-    }
+    }*/
     
     
 

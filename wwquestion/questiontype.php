@@ -54,6 +54,7 @@ class webwork_qtype extends default_questiontype {
         $question->seed = $record->seed;
         $question->code = base64_decode($record->code);
         $question->codecheck = $record->codecheck;
+        $question->grading = $record->grading;
         //hold onto the ID of the question_webwork record
         $question->webworkid = $record->id;
         return true;
@@ -79,6 +80,12 @@ class webwork_qtype extends default_questiontype {
         $record->code = base64_encode(stripslashes($question->code));
         $record->seed = $question->seed;
         $record->trials = $question->trials;
+        
+        $results = webwork_qtype::_derivations();
+        if(count($results) > 0) {
+            $record->grading = $results[0]['grading'];
+        }
+        
         //insert or update question in DB
         if($isupdate) {
             //update
@@ -213,6 +220,8 @@ class webwork_qtype extends default_questiontype {
         
         $unparsedhtml = base64_decode($derivation->html);
         
+        //partial answers
+        $showPartiallyCorrectAnswers = $question->grading;
         
         //new array keyed by field
         $fieldhash = $state->responses['answers'];
@@ -228,7 +237,9 @@ class webwork_qtype extends default_questiontype {
                 if(($nodename == "INPUT") || ($nodename == "SELECT") || ($nodename == "TEXTAREA")) {
                     $parser->iNodeAttributes['name'] = 'resp' . $question->id . '_' . $name;
                     if(($state->event == QUESTION_EVENTGRADE) && (isset($fieldhash[$name]))) {
-                        $parser->iNodeAttributes['class'] = $parser->iNodeAttributes['class'] . ' ' . question_get_feedback_class($fieldhash[$name]['score']);
+                        if($showPartiallyCorrectAnswers) {
+                            $parser->iNodeAttributes['class'] = $parser->iNodeAttributes['class'] . ' ' . question_get_feedback_class($fieldhash[$name]['score']);
+                        }
                     }
                     if(!strstr($name,'previous')) {
                         $answerfields[$name] = $fieldhash[$name];
@@ -254,6 +265,8 @@ class webwork_qtype extends default_questiontype {
         //for the seed form field
         $qid = $question->id;
         $seed = $state->responses['seed'];
+        
+        
         
         //if the student has answered
         include("$CFG->dirroot/question/type/webwork/display.html");
@@ -285,6 +298,7 @@ class webwork_qtype extends default_questiontype {
         $problem = array();
         $problem['code'] = $code;
         $problem['seed'] = $seed;
+        $problem['files']= array();
         
         //SOAP request
         $params = array();
@@ -409,20 +423,37 @@ class webwork_qtype extends default_questiontype {
     }
     
     /**
-    * @desc Prints a short 40 character limited version of all the answers for a question.
+    * @desc Enumerates the pictures for a response.
     * @param $question object The question object.
     * @param $state object The state object.
+    * @return array HTML code with <img> tag for each picture.
     */
     function get_actual_response($question, $state) {
         $temp = '';
         $i = 1;
         foreach($state->responses['answers'] as $key => $value) {
-            $temp .= "$i) " . $value['answer'] . " ";
+            $responses[] = "$i) " . $value['preview'];
             $i++;
         }
-        $lmax = 40;
-        $responses[] = (strlen($temp) > $lmax) ? substr($temp, 0, $lmax).'...' : $temp;
         return $responses;
+    }
+    
+    /**
+    * @desc Prints a summary of a response.
+    * @param $question object The question object.
+    * @param $state object The state object.
+    * @return string HTML.
+    */
+    function response_summary($question, $state, $length=80) {
+        // This should almost certainly be overridden
+        $responses = $this->get_actual_response($question, $state);
+        if (empty($responses) || !is_array($responses)) {
+            $responses = array();
+        }
+        if (is_array($responses)) {
+            $responses = implode('<br/><br/>', $responses);
+        }
+        return $responses;//substr($responses, 0, $length);
     }
     
     /**
@@ -526,6 +557,28 @@ class webwork_qtype extends default_questiontype {
         }
         $temp = $derivations;
         return true;
+    }
+    
+    /**
+    * Renders the question for printing and returns the LaTeX source produced
+    *
+    * This function should render the question suitable for a printed problem
+    * or solution sheet in LaTeX and return the rendered output.
+    * @return string          The LaTeX output.
+    * @param object $question The question to be rendered. Question type
+    *                         specific information is included.
+    * @param object $state    The state to render the question in. The
+    *                         question type specific information is also
+    *                         included.
+    * @param object $cmoptions
+    * @param string $type     Indicates if the question or the solution is to be
+    *                         rendered with the values 'question' and
+    *                         'solution'.
+    */
+    function get_texsource(&$question, &$state, $cmoptions, $type) {
+        // The default implementation simply returns a string stating that
+        // the question is only available online.
+        return get_string('onlineonly', 'texsheet');
     }
     
     /**

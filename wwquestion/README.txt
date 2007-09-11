@@ -1,122 +1,47 @@
 Webwork Question Type
 ----------------------
-Version: 0.3 (stable) Released 9/9/2007
+Version: 0.4 (stable) Released 9/11/2007
 Maintainer: Matthew Leventi  <mleventi@gmail.com>
 CVS: cvs.webwork.rochester.edu:/webwork/cvs/system wwmoodle/wwquestion
 
-This is a moodle questiontype module that will allow webwork questions to be asked in Moodle Quizzes and Lessons. Currently it supports many of the features found in the webwork2 system.
+This is a moodle questiontype module that will allow webwork questions to be asked in Moodle Quizzes and Lessons. Currently it supports many of the features found in the webwork2 system. Almost all WeBWorK questions should work with this system. (If you find one that doesnt send me a copy).
 
 * If you are using this send me an email. Feedback is appreciated. *
 
 Current Release:
-* Derivation mismatch bugs fixed.
-* New Test file
-* External File support! (applet,images,graphs,etc)
-* Code Refactoring
-* New levels of Code Checking including warnings
+* Show Partial Answer Questions Work!
+* New Unit Tests to ensure proper setup.
+* Code refactoring
 
-PG Language: What is supported?
-Simple and complex pg problems including those which use applets, images, graph generation problems, etc. 
-
-PG Language: What is not supported?
-Currently the only PG files that don't fully work are those with custom graders. Hence problems will reveal which answers the student has correct despite the showCorrectAnswer flag being off.
-
-Upgrading (from 0.1):
-A database column was added called codecheck. If you have data that you don't want to lose your going to have to add the new column manually to the db
-mysql command: ALTER TABLE mdl_question_webwork ADD COLUMN codecheck int(10) not null default 0;
-Then you can delete the webwork directory and recreate it from the CVS
-** I am not really sure if this is backward compatible to 0.1. If you are having problems with questions edit them and submit to regenerate derived copies.
+Upgrading:
+Backward Compatibility of existing questions is not guaranteeded. To upgrade your Database loading and unloading the webwork DB file in the XMLDB editor should make the necessary changes.
 
 
 Setup:
 1) Make a new folder named 'webwork' in the question/type directory.
-2) Copy all the files from this directory into .
+2) Copy all the files into the new 'webwork' directory.
 3) Point your browser to http://yourmoodle/admin to setup the question_webwork database table.
 
 Configuration:
 1) Change the WSDL path variable in the webwork/config.php file to point to your Webwork Problem Server's WSDL file.
 
+Testing:
+1) In the site administration -> reports -> unit tests run the webwork unit tests. Enter '/question/type/webwork/simpletest' to only run the webwork tests. 
+
 Use:
-Go into the question bank and create a new WeBWorK question. 
-A webwork question only has three special fields. 
-    -code: Paste the perl code that renders the webwork question here.
-    -seed: The starting seed to use to generate random problems
-    -trials: The number of attempts the generator should make to generate and cache problems.
-    
+Go into the question bank and create a new WeBWorK question. Besides the usual question options there are a few WeBWorL specific fields.
+Code       -> Copy and paste the PG code into this field.
+Files      -> Upload any necessary external files that the question depends on.
+Code Check -> This determines how strict the checker should be in determining whether your question works
+Seed       -> The starting seed on which to create question derivations.
+Trials     -> The number of derivations to create. (Roughly)
+
+Note on Question Creation:
+As you increase trials question creation will take longer. If you need a lot of external files question creation will also take longer. Longest time I have seen is about a minute. The reason for the delay involves the creation of derived questions based on the PG code. It means that viewing of questions should be very fast. Student answer checks will also be faster.
+
+Note on Randomness:
+WeBWorK Questions are not truly random within this module. The trials option determines the size of a pool of questions that are generated from the PG code. Students will get a random derivation out of the pool as the question they have to answer. When an instructor previews a question in the bank he/she will see a random seed.
+
 Finding webwork questions:
-http://cvs.webwork.rochester.edu/viewcvs.cgi/rochester_problib/?cvsroot=UR+Problem+Library (for now)    
-
-Note:
-Previewing the question will use random seeds.
-
-Example Problem:
-
-##DESCRIPTION
-
-# Singularities, Determine Type (Poles), Residues
-
-##ENDDESCRIPTION
-
-
-DOCUMENT();        # This should be the first executable line in the problem.
-
-loadMacros(
-   "PGstandard.pl",     # Standard macros for PG language
-   "MathObjects.pl",
-   "PGunion.pl",        # Union College macros
-   #"PGcourse.pl",      # Customization file for the course
-);
-
-TEXT(beginproblem());
-$showPartialCorrectAnswers = 1;
-
-##############################################################
-#
-#  Setup
-#
-Context("Point");
-
-$a = non_zero_random(-10,10,1);
-
-$formula_string = Formula( "sin(1/($a*z))"  );
-
-@singularities = ("(0, 1/$a)" );
-$f = Compute("(0,1/$a)");
-##############################################################
-#
-#  Text
-#
-#
-Context()->texStrings;
-BEGIN_TEXT
-
-Find the singularities and their residues for $PAR
-
-\[ $formula_string \]
-
-$PAR
-\{ans_rule(60)\}
-$PAR
-List the singularities and their residues as ordered pairs. (for example,
-(3, pi), (-1,2) means that there is a singularity at \(3\) with residue \(\pi\)
-and a singularity at \(-1\) with residue \(2\).
-
-$PA
-END_TEXT
-Context()->normalStrings;
-##############################################################
-#
-#  Answers
-#
-#
-
-ANS(List(@singularities)->cmp(correct_ans=>$f->{correct_ans}) );
-
-
-
-ENDDOCUMENT();        # This should be the last executable line in the problem.
-
-
-
-
-
+http://cvs.webwork.rochester.edu/viewcvs.cgi/rochester_problib/?cvsroot=UR+Problem+Library (for now)
+An example can be found in simpletest/sampleProblem.pg as well.    

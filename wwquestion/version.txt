@@ -1,5 +1,12 @@
 Old versions:
 
+Version .3 (9/11/2007)
+* Derivation mismatch bugs fixed.
+* New Test file
+* External File support! (applet,images,graphs,etc)
+* Code Refactoring
+* New levels of Code Checking including warnings
+
 Version .2 (August 2007)
 * DB consistency issues fixed (thanks to Jean-Marc)
 * New code checking, makes sure PG code is correct

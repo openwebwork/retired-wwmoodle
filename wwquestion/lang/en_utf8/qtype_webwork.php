@@ -1,4 +1,4 @@
-<?php // $Id: qtype_webwork.php,v 1.4 2007-09-09 02:53:16 mleventi Exp $
+<?php // $Id: qtype_webwork.php,v 1.5 2007-09-11 20:10:03 mleventi Exp $
 /**
  * The language strings for the QTYPENAME question type.
  *    
@@ -20,7 +20,9 @@ $string['edit_optionheader'] = 'WeBWorK Options';
 $string['edit_codecheck'] = 'Code Checking';
     $string['edit_codecheck0'] = 'Turn Off (unadvised)';
     $string['edit_codecheck1'] = 'Reject Problem Seeds w/ Errors (silent)';
-    $string['edit_codecheck2'] = 'Reject Question if any Errors (strict)';
+    $string['edit_codecheck2'] = 'Reject Question if any Errors exist (strict)';
+    $string['edit_codecheck3'] = 'Reject Problem Seeds w/ Errors or Warnings (silent)';
+    $string['edit_codecheck4'] = 'Reject Question if any Errors or Warnings exist (strict)';
 $string['edit_codefile'] = 'Question File';
 $string['edit_addcodefiles'] = 'Add More Question Files';
 $string['edit_code'] = 'Code';

@@ -54,11 +54,13 @@ class question_edit_webwork_form extends question_edit_form {
         $codecheckoptions = array(
             0 => get_string('edit_codecheck0','qtype_webwork'),
             1 => get_string('edit_codecheck1','qtype_webwork'),
-            2 => get_string('edit_codecheck2','qtype_webwork'));
+            2 => get_string('edit_codecheck2','qtype_webwork'),
+            3 => get_string('edit_codecheck3','qtype_webwork'),
+            4 => get_string('edit_codecheck4','qtype_webwork'));
         $mform->addElement('select','codecheck', get_string('edit_codecheck', 'qtype_webwork'),$codecheckoptions);
         $mform->setType('codecheck',PARAM_INT);
         $mform->setHelpButton('codecheck', array('codecheck', get_string('edit_codecheck', 'qtype_webwork'), 'webwork'));
-        $mform->setDefault('codecheck',2);
+        $mform->setDefault('codecheck',4);
         
         //SEED
         $mform->addElement('text', 'seed', get_string('edit_seed','qtype_webwork'),
@@ -83,163 +85,25 @@ class question_edit_webwork_form extends question_edit_form {
     
     function validation($data) {
         global $CFG;
-        //check that the code is valid
-        $err = $this->codecheck($data);
-        if($err != false) {
-            return $err;
+        
+        //is this a copy of a current question
+        if(isset($this->_form->_submitValues['makecopy'])) {
+            $questioncopy = true;
+        } else {
+            $questioncopy = false;
+        }
+        //webwork_question id
+        $wwquestionid = $this->question->webworkid;
+        
+        //codecheck
+        $result = webwork_codecheck($data,$wwquestionid,$questioncopy);
+        if(is_array($result)) {
+            return $result;
         }
         return true;
     }
 
-    function codecheck($data) {
-
-        //codechecklevel
-        $codechecklevel = $data['codecheck'];
-        //here we construct a temp question object
-        $question = new stdClass;
-        $question->code = base64_encode(stripslashes($data['code']));
-        $question->seed = $data['seed'];
-        $question->trials = $data['trials'];
-        
-        //temporary solution
-        if(!isset($this->question->webworkid)) {
-            $path = webwork_get_tmp_path_full();
-            $urlpath = webwork_get_filehandler_path() . '/' . webwork_get_tmp_path() . '/';
-        } else {
-            $path = webwork_get_wwquestion_path_full($this->question->webworkid);
-            $urlpath = webwork_get_filehandler_path() . '/' . webwork_get_wwquestion_path($this->question->webworkid) . '/';
-        }
-        $filelist = list_directories_and_files($path);
-        $filearray = array();
-        
-        foreach($filelist as $file) {
-            if(!is_dir($path . '/' . $file)) {
-                $encode = base64_encode($urlpath . '/' . $file);
-                array_push($filearray,$encode);
-            }
-            
-        }
-        $question->files = $filearray;
-        
-        //one call to the server will return response for this code and keep it static in the function
-        $results = webwork_get_derivations($question);
-        //127.0.0.1
-        //no code check
-        if($codechecklevel == 0) {
-            webwork_qtype::_derivations($results);
-            return false;
-        }
-        
-        //init error array
-        $errorresults = array();
-        $noerrorresults = array();
-        
-        //see if we got errors (split)
-        foreach($results as $record) {
-            if((isset($record['errors'])) && ($record['errors'] != '') && ($record['errors'] != null)) {
-                array_push($errorresults,$record);
-            } else {
-                array_push($noerrorresults,$record);
-            }
-        }
-        
-        $goodresults = array();
-        $warningresults = array();
-        
-        foreach($noerrorresults as $record) {
-            if((isset($record['warnings'])) && ($record['warnings'] != '') && ($record['warnings'] != null)) {
-                array_push($warningresults,$record);
-            } else {
-                array_push($goodresults,$record);
-            }
-            
-        }
-        
-        
-        //if there are good seeds we use those
-        if((count($goodresults) > 0) && ($codechecklevel == 1)) {
-            webwork_qtype::_derivations($goodresults);
-            return false;
-        }
-        
-        //if code check is strict
-        if(count($goodresults) == count($results)) {
-            webwork_qtype::_derivations($results);
-            return false;
-        }
-        
-        $errormsgs = array();
-        $warningmsgs = array();
-        //at this point we are going to be invalid
-        //this correlates seeds with certain error messages for better output
-        //ERRORS
-        foreach($errorresults as $record) {
-            $found = 0;
-            $candidate = $record['errors'] . "<br>";
-            $candidateseed = $record['seed'];
-            for($i=0;$i<count($errormsgs);$i++) {
-                if($candidate == $errormsgs[$i]['errors']) {
-                    $found = 1;
-                    $errormsgs[$i]['seeds'][] = $candidateseed;
-                }
-            }
-            if($found == 0) {
-                //new error message
-                $msg = array();
-                $msg['errors'] = $candidate;
-                $msg['seeds'] = array();
-                $msg['seeds'][] = $candidateseed;
-                $errormsgs[] = $msg;
-            }
-        }
-        //WARNINGS
-        foreach($warningresults as $record) {
-            $found = 0;
-            $candidate = $record['warnings'] . "<br>";
-            $candidateseed = $record['seed'];
-            for($i=0;$i<count($warningmsgs);$i++) {
-                if($candidate == $warningmsgs[$i]['errors']) {
-                    $found = 1;
-                    $warningmsgs[$i]['seeds'][] = $candidateseed;
-                }
-            }
-            if($found == 0) {
-                //new error message
-                $msg = array();
-                $msg['warnings'] = $candidate;
-                $msg['seeds'] = array();
-                $msg['seeds'][] = $candidateseed;
-                $warningmsgs[] = $msg;
-            }
-            
-        }
-        $output = "Errors in PG Code on: " . count($errorresults) . " out of " . count($results) . " seeds tried:<br>";
-        //construct error statement
-        $counter = 1;
-        foreach($errormsgs as $msg) {
-            $output .= "$counter) ";
-            $output .= "Seeds (";
-            foreach ($msg['seeds'] as $seed) {
-                $output .= $seed . " ";
-            }
-            $output .= ") gave Errors:" . $msg['errors'] . "<br><br>";
-            $counter++;
-        }
-        $output .= "Warnings in PG Code on: " . count($warningresults) . " out of " . count($results) . " seeds tried:<br>";
-        $counter = 1;
-        foreach($warningmsgs as $msg) {
-            $output .= "$counter) ";
-            $output .= "Seeds (";
-            foreach ($msg['seeds'] as $seed) {
-                $output .= $seed . " ";
-            }
-            $output .= ") gave Warnings:" . $msg['warnings'] . "<br><br>";
-            $counter++;
-        }
-        $returner =array();
-        $returner['code'] = $output;
-        return $returner;
-    }
+    
 
     function qtype() {
         return 'webwork';

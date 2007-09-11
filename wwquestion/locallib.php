@@ -1,6 +1,7 @@
 <?php
 
 require_once("$CFG->dirroot/question/type/webwork/config.php");
+require_once("$CFG->dirroot/question/type/webwork/questiontype.php");
 require_once("$CFG->libdir/soap/nusoap.php");
 require_once("$CFG->libdir/filelib.php");
 require_once("$CFG->libdir/setuplib.php");
@@ -164,6 +165,183 @@ function webwork_parse_change_derivation(&$derivation) {
     }
     $derivation->html = base64_encode($parsedhtml);
     return true;
+}
+
+function webwork_codecheck($data,$wwquestionid,$questioncopy) {
+    //codechecklevel
+    $codechecklevel = $data['codecheck'];
+    
+    //here we construct a temp question object
+    $question = new stdClass;
+    $question->code = base64_encode(stripslashes($data['code']));
+    $question->seed = $data['seed'];
+    $question->trials = $data['trials'];
+    
+    //handle the new question from old functionality
+    if($questioncopy) {
+        webwork_make_tmp_dir();
+        $path = webwork_get_wwquestion_path_full($wwquestionid);
+        $filelist = list_directories_and_files($path);
+        //copy everthing but derivations folder into tmp folder
+        foreach($filelist as $file) {
+            if($file != 'derivations') {
+                webwork_copy_file("$path/$file",webwork_get_tmp_path_full() . '/' . $file);
+            }
+        }
+    }
+    
+    
+    //should we look in tmp or in wwquestion dir to find stuff
+    if(!isset($wwquestionid)) {
+        $path = webwork_get_tmp_path_full();
+        $urlpath = webwork_get_filehandler_path() . '/' . webwork_get_tmp_path() . '/';
+    } else {
+        $path = webwork_get_wwquestion_path_full($this->question->webworkid);
+        $urlpath = webwork_get_filehandler_path() . '/' . webwork_get_wwquestion_path($this->question->webworkid) . '/';
+    }
+    $filelist = list_directories_and_files($path);
+    $filearray = array();
+    
+    //files that need to be pushed
+    foreach($filelist as $file) {
+        if(!is_dir($path . '/' . $file)) {
+            $encode = base64_encode($urlpath . '/' . $file);
+            array_push($filearray,$encode);
+        }
+    }
+   
+    $question->files = $filearray;
+    
+    //one call to the server will return response for this code and keep it static in the function
+    $results = webwork_get_derivations($question);
+    
+    //filter errors and warnings
+    $errorresults = array();
+    $noerrorresults = array();
+    $warningresults = array();
+    $goodresults = array();
+    foreach($results as $record) {
+        if((isset($record['errors'])) && ($record['errors'] != '') && ($record['errors'] != null)) {
+            array_push($errorresults,$record);
+        } else {
+            array_push($noerrorresults,$record);
+        }
+    }
+    foreach($noerrorresults as $record) {
+        if((isset($record['warnings'])) && ($record['warnings'] != '') && ($record['warnings'] != null)) {
+            array_push($warningresults,$record);
+        } else {
+            array_push($goodresults,$record);
+        }
+    }
+    
+    switch($codechecklevel) {
+        //No code check
+        case 0:
+            webwork_qtype::_derivations($results);
+            return true;
+            break;
+        //reject seeds with errors
+        case 1:
+            if(count($noerrorresults) > 0) {
+                webwork_qtype::_derivations($noerrorresults);
+                return true;
+            }
+            break;
+        //reject if errors
+        case 2:
+            if(count($noerrorresults) == count($results)) {
+                webwork_qtype::_derivations($results);
+                return true;
+            }
+            break;
+        //reject seeds with errors or warnings
+        case 3:
+            if(count($goodresults) > 0) {
+                webwork_qtype::_derivations($goodresults);
+                return true;
+            }
+            break;
+        //reject if errors or warnings
+        case 4:
+            if(count($goodresults) == count($results)) {
+                webwork_qtype::_derivations($results);
+                return true;
+            }
+            break;
+    }
+    
+    $errormsgs = array();
+    $warningmsgs = array();
+    //at this point we are going to be invalid
+    //this correlates seeds with certain error messages for better output
+    //ERRORS
+    foreach($errorresults as $record) {
+        $found = 0;
+        $candidate = $record['errors'] . "<br>";
+        $candidateseed = $record['seed'];
+        for($i=0;$i<count($errormsgs);$i++) {
+            if($candidate == $errormsgs[$i]['errors']) {
+                $found = 1;
+                $errormsgs[$i]['seeds'][] = $candidateseed;
+            }
+        }
+        if($found == 0) {
+            //new error message
+            $msg = array();
+            $msg['errors'] = $candidate;
+            $msg['seeds'] = array();
+            $msg['seeds'][] = $candidateseed;
+            $errormsgs[] = $msg;
+        }
+    }
+    //WARNINGS
+    foreach($warningresults as $record) {
+        $found = 0;
+        $candidate = $record['warnings'] . "<br>";
+        $candidateseed = $record['seed'];
+        for($i=0;$i<count($warningmsgs);$i++) {
+            if($candidate == $warningmsgs[$i]['errors']) {
+                $found = 1;
+                $warningmsgs[$i]['seeds'][] = $candidateseed;
+            }
+        }
+        if($found == 0) {
+            //new error message
+            $msg = array();
+            $msg['warnings'] = $candidate;
+            $msg['seeds'] = array();
+            $msg['seeds'][] = $candidateseed;
+            $warningmsgs[] = $msg;
+        }
+        
+    }
+    $output = "Errors in PG Code on: " . count($errorresults) . " out of " . count($results) . " seeds tried:<br>";
+    //construct error statement
+    $counter = 1;
+    foreach($errormsgs as $msg) {
+        $output .= "$counter) ";
+        $output .= "Seeds (";
+        foreach ($msg['seeds'] as $seed) {
+            $output .= $seed . " ";
+        }
+        $output .= ") gave Errors:" . $msg['errors'] . "<br><br>";
+        $counter++;
+    }
+    $output .= "Warnings in PG Code on: " . count($warningresults) . " out of " . count($results) . " seeds tried:<br>";
+    $counter = 1;
+    foreach($warningmsgs as $msg) {
+        $output .= "$counter) ";
+        $output .= "Seeds (";
+        foreach ($msg['seeds'] as $seed) {
+            $output .= $seed . " ";
+        }
+        $output .= ") gave Warnings:" . $msg['warnings'] . "<br><br>";
+        $counter++;
+    }
+    $returner =array();
+    $returner['code'] = $output;
+    return $returner;
 }
 
 //////////////////////////////////////////////////////////////////////////////////
