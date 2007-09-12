@@ -101,14 +101,20 @@ if($files eq 'y') {
    if($doWhat eq 'link') {
       $action = 'ln -sf ';
    } elsif ($doWhat eq 'copy') {
+      print "Remember to rerun setup when/if you update from the CVS\n";
       $action = 'cp -R ';
    } else {
       exit;
    }
-   system($action . "$wwquestionRoot/moodle/question/type/webwork " .$moodleRoot . '/question/type/webwork');
+   #wipe existing directories
+   system("rm -rf $moodleRoot/question/type/webwork");
+   system("rm -rf $moodleRoot/lang/en_utf8/help/webwork");
+   system($action . "$wwquestionRoot/moodle/question/type/webwork " .$moodleRoot . '/question/type/');
    system($action . "$wwquestionRoot/moodle/lang/en_utf8/qtype_webwork.php " . $moodleRoot . '/lang/en_utf8/qtype_webwork.php');
    system($action . "$wwquestionRoot/moodle/lang/en_utf8/help/quiz/webwork.html " . $moodleRoot . '/lang/en_utf8/help/quiz/webwork.html');
-   system($action . "$wwquestionRoot/moodle/lang/en_utf8/help/webwork " . $moodleRoot . '/lang/en_utf8/help/webwork');
+   system($action . "$wwquestionRoot/moodle/lang/en_utf8/help/webwork " . $moodleRoot . '/lang/en_utf8/help/');
+
+   print "Setup Successful!\n";
 
 
 }
