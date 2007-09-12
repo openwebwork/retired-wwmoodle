@@ -91,7 +91,7 @@ open(OUTP3, ">config.php") or die("Cannot open file 'config.php' for writing.\n"
 print OUTP3 $content;
 close OUTP3;
 
-system("cp config.php $wwquestionRoot/moodle/question/type/webwork/config.php");
+system("mv config.php $wwquestionRoot/moodle/question/type/webwork/config.php");
 print "config.php file generated.\n";
 
 #File Moving/Linking
