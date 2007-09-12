@@ -1,7 +1,7 @@
 <?php
 
 //Path to the WSDL file on the Webwork Server
-define('WWQUESTION_WSDL','ENTER YOUR WSDL PATH HERE','WSDL Path Test');
+define('WWQUESTION_WSDL','MARKER_FOR_WSDL');
 
 //Leave the rest alone
 define('WWQUESTION_PREFIX','/wwquestions');

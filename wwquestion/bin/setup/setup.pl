@@ -1,7 +1,6 @@
 #!/usr/bin/env perl
 
-use CPAN;
-use File::Which;  die "You do not have File::Which installed.\n Run perl -MCPAN -e 'install File::Which' to install. Then rerun this." if $@;
+use Cwd;
 
 sub promptUser {
 
@@ -62,10 +61,56 @@ if($continue ne "y") {
     exit;
 }
 
+#Program Root
+print "Please enter the root directory where wwquestion module is located. \n";
+print "Example: /tmp/wwmoodle/wwquestion\n";
+$wwquestionRoot = promptUser('');
+
+#Moodle Root
 print "Please enter the root directory where Moodle is installed. \n";
 print "Example: /var/www/moodle \n";
 $moodleRoot = promptUser('');
 
+#WSDL Root Directory
 print "Please enter the WSDL Path given in the server setup. \n";
 print "Example: http://myserver/problemserver_files/WSDL.wsdl\n";
 $wsdlPath = promptUser('');
+
+#Writing Configuration File
+open(INPUT2, "<config.php.base");
+$content = "";
+while(<INPUT2>)
+{
+    my($line) = $_;
+    $content .= $line;
+}
+close INPUT2;
+
+$content =~ s/MARKER_FOR_WSDL/$wsdlPath/;
+open(OUTP3, ">config.php") or die("Cannot open file 'config.php' for writing.\n");
+print OUTP3 $content;
+close OUTP3;
+
+system("cp config.php $wwquestionRoot/moodle/question/type/webwork/config.php");
+print "config.php file generated.\n";
+
+#File Moving/Linking
+$files = promptUser('Would you like me to place the files into proper directories (y,n)','y');
+if($files eq 'y') {
+   $doWhat = promptUser('Would you like me to copy the files or soft link them.(copy,link)','link');
+   if($doWhat eq 'link') {
+      $action = 'ln -sf ';
+   } elsif ($doWhat eq 'copy') {
+      $action = 'cp -R ';
+   } else {
+      exit;
+   }
+   system($action . "$wwquestionRoot/moodle/question/type/webwork " .$moodleRoot . '/question/type/webwork');
+   system($action . "$wwquestionRoot/moodle/lang/en_utf8/qtype_webwork.php " . $moodleRoot . '/lang/en_utf8/qtype_webwork.php');
+   system($action . "$wwquestionRoot/moodle/lang/en_utf8/help/quiz/webwork.html " . $moodleRoot . '/lang/en_utf8/help/quiz/webwork.html');
+   system($action . "$wwquestionRoot/moodle/lang/en_utf8/help/webwork " . $moodleRoot . '/lang/en_utf8/help/webwork');
+
+
+}
+
+1;
