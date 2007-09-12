@@ -18,12 +18,8 @@ Backward Compatibility of existing questions is not guaranteeded. To upgrade you
 
 
 Setup:
-1) Make a new folder named 'webwork' in the question/type directory.
-2) Copy all the files into the new 'webwork' directory.
-3) Point your browser to http://yourmoodle/admin to setup the question_webwork database table.
-
-Configuration:
-1) Change the WSDL path variable in the webwork/config.php file to point to your Webwork Problem Server's WSDL file.
+1) Run the perl installation script in bin/setup/setup.pl
+2) Point your browser to http://yourmoodle/admin to setup the question_webwork database table.
 
 Testing:
 1) In the site administration -> reports -> unit tests run the webwork unit tests. Enter '/question/type/webwork/simpletest' to only run the webwork tests. 
