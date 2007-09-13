@@ -25,7 +25,6 @@ class question_edit_webwork_form extends question_edit_form {
         
         //CODE HEADER
         $mform->addElement('header', 'codeheader', get_string("edit_codeheader", 'qtype_webwork'));
-        $mform->setHelpButton('codeheader',array('codeheader', get_string('edit_codeheader','qtype_webwork'),'webwork'));
         
         //CODE
         $mform->addElement('textarea', 'code', get_string('edit_code', 'qtype_webwork'),
@@ -66,7 +65,7 @@ class question_edit_webwork_form extends question_edit_form {
         $mform->addElement('text', 'seed', get_string('edit_seed','qtype_webwork'),
             array('size' => 3));
         $mform->setType('seed', PARAM_INT);
-        $mform->setHelpButton('seed', array('webwork', get_string('edit_seed', 'qtype_webwork'), 'webwork'));
+        $mform->setHelpButton('seed', array('seed', get_string('edit_seed', 'qtype_webwork'), 'webwork'));
         $mform->setDefault('seed', 0);
         $mform->addRule('seed', null, 'required', null, 'client');
         
@@ -74,7 +73,7 @@ class question_edit_webwork_form extends question_edit_form {
         $mform->addElement('text', 'trials', get_string('edit_trials','qtype_webwork'),
             array('size' => 3));
         $mform->setType('trials', PARAM_INT);
-        $mform->setHelpButton('trials', array('webwork', get_string('edit_trials', 'qtype_webwork'), 'webwork'));
+        $mform->setHelpButton('trials', array('trials', get_string('edit_trials', 'qtype_webwork'), 'webwork'));
         $mform->setDefault('trials', 10);
         $mform->addRule('trials', null, 'required', null, 'client');
     } 
