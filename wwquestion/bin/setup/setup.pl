@@ -97,7 +97,7 @@ print "config.php file generated.\n";
 #File Moving/Linking
 $files = promptUser('Would you like me to place the files into proper directories (y,n)','y');
 if($files eq 'y') {
-   $doWhat = promptUser('Would you like me to copy the files or soft link them.(copy,link)','link');
+   $doWhat = promptUser('Would you like me to copy the help files or soft link them.(copy,link)','link');
    if($doWhat eq 'link') {
       $action = 'ln -sf ';
    } elsif ($doWhat eq 'copy') {
@@ -109,7 +109,7 @@ if($files eq 'y') {
    #wipe existing directories
    system("rm -rf $moodleRoot/question/type/webwork");
    system("rm -rf $moodleRoot/lang/en_utf8/help/webwork");
-   system($action . "$wwquestionRoot/moodle/question/type/webwork " .$moodleRoot . '/question/type/');
+   system("cp -R $wwquestionRoot/moodle/question/type/webwork " .$moodleRoot . '/question/type/');
    system($action . "$wwquestionRoot/moodle/lang/en_utf8/qtype_webwork.php " . $moodleRoot . '/lang/en_utf8/qtype_webwork.php');
    system($action . "$wwquestionRoot/moodle/lang/en_utf8/help/quiz/webwork.html " . $moodleRoot . '/lang/en_utf8/help/quiz/webwork.html');
    system($action . "$wwquestionRoot/moodle/lang/en_utf8/help/webwork " . $moodleRoot . '/lang/en_utf8/help/');
