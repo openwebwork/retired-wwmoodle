@@ -1,5 +1,5 @@
 <?php
-// $Id: lib.php,v 1.25 2007-08-29 18:37:55 gage Exp $
+// $Id: lib.php,v 1.26 2007-09-19 15:47:38 gage Exp $
 
 require_once("$CFG->libdir/soap/nusoap.php");
 
@@ -669,6 +669,7 @@ class webwork_client {
             if(isset($setlist)) {
                 $setoptions = array();
                 foreach($setlist as $setid) {
+
                     $setoptions[$setid] = $setid;
                 }
                 return $setoptions;
@@ -710,11 +711,18 @@ class webwork_client {
         */
         function create_user($webworkcourse,&$userdata,$permission='0') {
             $studentid = $userid;
+            # FIXME:  find permission for this user and set permissions appropriately in webwork
+            # FIXME:  find the group(s)  that this person is a member of 
+            # FIXME:  I have used the following scheme:  gage_SEC  use groups ending like this to determine sections in webwork
+            # FIXME:  use ordinary groups   taName    to correspond to recitation sections in WeBWorK
+            #
+            # FIXME:  make it so an update_user function is called whenever the user data in moodle is changed
+            # FIXME:  so if a student switches groups this is reflected in WeBWorK
             $this->handler('add_user',array('courseName' => $webworkcourse, 'record' => array(
                 'user_id' => $userdata->username,
                 'first_name' => $userdata->firstname,
                 'last_name' => $userdata->lastname,
-                'email_address' => $userdata->emailaddress,
+                'email_address' => $userdata->email,
                 'student_id' => $studentid,
                 'status' => 'C',
                 'section' => '',
