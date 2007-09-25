@@ -1,17 +1,18 @@
 <?php
 require_once ('moodleform_mod.php');
-require_once ('lib.php');
+require_once ('locallib.php');
 
 class mod_wwassignment_mod_form extends moodleform_mod {
     
     function definition() {
-        global $COURSE;
+        global $COURSE,$USER;
         $mform =& $this->_form;
         
         //Is this particular course mapped to a course in WeBWorK   
-        $wwclient = new webwork_client();
+        $wwclient = new wwassignment_client();
         $wwcoursename = _wwassignment_mapped_course($COURSE->id,false);
         $wwsetname = _wwassignment_mapped_set($this->_instance);
+        $wwusername = $USER->username;
         
         //create the instructor if necessary
         $wwusername = _wwassignment_mapcreate_user($wwcoursename,$wwusername,'10');
@@ -28,6 +29,12 @@ class mod_wwassignment_mod_form extends moodleform_mod {
             //we are doing an update, since an id exists in moodle db
             $wwsetlink = _wwassignment_link_to_edit_set_auto_login($wwcoursename,$wwsetname,$wwusername,$wwkey);
             $mform->addElement('link','edit_set',get_string('edit_set_link_desc','wwassignment'),$wwsetlink,get_string('edit_set_link_name','wwassignment'));
+            $wwsetdata = $wwclient->get_assignment_data($wwcoursename,$wwsetname,false);
+            
+            $opendate = strftime("%c", $wwsetdata['open_date']);
+            $duedate = strftime("%c", $wwsetdata['due_date']);
+            $mform->addElement('static','opendate','WeBWorK Set Open Date',$opendate);
+            $mform->addElement('static','duedate','WeBWorK Set Due Date',$duedate);
         }
         
         //define the mapping

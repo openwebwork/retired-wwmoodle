@@ -2,6 +2,8 @@
 
 require_once("$CFG->libdir/soap/nusoap.php");
 
+define(WWASSIGNMENT_DEBUG,1);
+
 //////////////////////////////////////////////////////////////////
 //EVENT CREATION AND DELETION
 //////////////////////////////////////////////////////////////////
@@ -15,14 +17,17 @@ require_once("$CFG->libdir/soap/nusoap.php");
 * @return integer 0 on success. -1 on error.
 */
 function _wwassignment_create_events($wwsetname,$wwassignmentid,$opendate,$duedate) {
+    global $COURSE;
     unset($event);
     $event->name = $wwsetname;
-    $openevent->description = '';
+    $event->description = 'WeBWorK Set Event';
     $event->courseid = $COURSE->id;
     $event->groupid = 0;
     $event->userid = 0;
+    $event->format = 1;
     $event->modulename = 'wwassignment';
     $event->instance = $wwassignmentid;
+    $event->visible  = 1;
     
     $openevent = $event;
     $dueevent = $event;
@@ -36,6 +41,7 @@ function _wwassignment_create_events($wwsetname,$wwassignmentid,$opendate,$dueda
     $dueevent->eventtype = 'due';
     $dueevent->timestart = $duedate;
     $dueevent->timeduration = 1;
+    
     
     $result = 0;
     if(!add_event($openevent)) {
@@ -128,7 +134,7 @@ function _wwassignment_mapped_course($courseid,$silent = true) {
         return $wwassignmentbridge->webwork_course;
     }
     if(!$silent) {
-        print_error(get_string('webwork_course_map_failure','wwassignment'));
+        print_error('webwork_course_map_failure','wwassignment');
     }
     return -1;
 }
@@ -145,7 +151,7 @@ function _wwassignment_mapped_set($wwassignmentid,$silent = true) {
         return $wwassignment->webwork_set;
     }
     if(!$silent) {
-        print_error(get_string('webwork_set_map_failure','wwassignment'));
+        print_error('webwork_set_map_failure','wwassignment');
     }
     return -1;
 }
@@ -206,7 +212,8 @@ function _wwassignment_link_to_set($webworkcourse,$webworkset) {
 * @return URL.
 */
 function _wwassignment_link_to_course($webworkcourse) {
-    return WWASSIGNMENT_WEBWORK_URL."/$webworkcourse/";
+    global $CFG;
+    return $CFG->wwassignment_webworkurl."/$webworkcourse/";
 }
 
 
@@ -222,24 +229,26 @@ class wwassignment_client {
         var $defaultparams;
         var $datacache;
         var $mappingcache;
+        
         /**
          * @desc Constructs a singleton webwork_client.
          */
         function wwassignment_client()
         {
+            global $CFG;
             // static associative array containing the real objects, key is classname
             static $instances=array();
             // get classname
             $class = get_class($this);
             if (!array_key_exists($class, $instances)) {
                 // does not yet exist, save in array
-                $this->client = new soap_client(WWASSIGNMENT_WEBWORK_WSDL,'wsdl');
+                $this->client = new soap_client($CFG->wwassignment_rpc_wsdl,'wsdl');
                 $err = $this->client->getError();
                 if ($err) {
-                    print_error(get_string('construction_error','wwassignment')."<BR>$err");
+                    print_error('construction_error','wwassignment');
                 }
                 $this->defaultparams = array();
-                $this->defaultparams['authenKey']  = WWASSIGNMENT_WEBWORK_KEY;
+                $this->defaultparams['authenKey']  = $CFG->wwassignment_rpc_key;
                 $this->datacache = array(); 
                 $this->mappingcache = array();
                 $instances[$class] = $this;
@@ -248,7 +257,8 @@ class wwassignment_client {
             foreach (get_class_vars($class) as $var => $value) {
                 $this->$var =& $instances[$class]->$var;
             }
-        }    
+        }   
+         
         /**
          *@desc Calls a SOAP function and passes (authenkey,course) automatically in the parameter list.
          *@param string $functioncall The function to call
@@ -263,11 +273,18 @@ class wwassignment_client {
                 if(!$override) {
                         $params = array_merge($this->defaultparams,$params);
                 }
+                if(WWASSIGNMENT_DEBUG) {
+                    echo "Called: $functioncall <br>";
+                    echo "Params: ";
+                    var_dump($params);
+                    echo "<br>"; 
+                }
                 $result = $this->client->call($functioncall,$params);
+                
                 //$result = call_user_func_array(array(&$this->client,$functioncall),$params);
                 if($err = $this->client->getError()) {
                         //print_error(get_string("rpc_fault","wwassignment') . " " . $functioncall. " ". $err);
-                        print_error(get_string('rpc_error','wwassignment')."<BR>$err<BR><BR>Response:<BR>".$this->client->response );  
+                        print_error('rpc_error','wwassignment');  
                 }
                 return $result;
         }
@@ -289,7 +306,7 @@ class wwassignment_client {
                 return $webworkuser;
             }
             if(!$silent) {
-                print_error(get_string('webwork_user_map_failure',"wwassignment"));
+                print_error('webwork_user_map_failure',"wwassignment");
             }
             return -1;
         }
@@ -313,7 +330,7 @@ class wwassignment_client {
             }
             
             if(!$silent) {
-                print_error(get_string('webwork_user_set_map_failure','wwassignment'));
+                print_error('webwork_user_set_map_failure','wwassignment');
             }
             return -1;
         }
@@ -336,7 +353,7 @@ class wwassignment_client {
                 return $setinfo;
             }
             if(!$silent) {
-                print_error(get_string('webwork_set_map_failure','wwassignment'));
+                print_error('webwork_set_map_failure','wwassignment');
             }
             return -1;
             
@@ -356,7 +373,7 @@ class wwassignment_client {
                 return $record;
             }
             if(!$silent) {
-                print_error(get_string('webwork_user_set_map_failure','wwassignment'));
+                print_error('webwork_user_set_map_failure','wwassignment');
             }
             return -1;
         }
@@ -374,7 +391,7 @@ class wwassignment_client {
                 return count($record);
             }
             if(!$silent) {
-                print_error(get_string('webwork_set_map_failure','wwassignment'));
+                print_error('webwork_set_map_failure','wwassignment');
             }
             return -1;
             
@@ -392,7 +409,7 @@ class wwassignment_client {
                 return $key;
             }
             if(!$silent) {
-                print_error(get_string('webwork_user_map_failure','wwassignment'));
+                print_error('webwork_user_map_failure','wwassignment');
             }
             return -1;
         }
@@ -414,7 +431,7 @@ class wwassignment_client {
                 return $setoptions;
             }
             if(!$silent) {
-                print_error(get_string('webwork_course_map_failure','wwassignment'));
+                print_error('webwork_course_map_failure','wwassignment');
             }
             return -1;          
         }
@@ -435,7 +452,7 @@ class wwassignment_client {
                 return $courseoptions; 
             }
             if(!$silent) {
-                print_error(get_string('webwork_course_list_map_failure','wwassignment'));
+                print_error('webwork_course_list_map_failure','wwassignment');
             }
             return -1;
    
