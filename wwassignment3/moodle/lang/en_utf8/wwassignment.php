@@ -1,5 +1,5 @@
 <?php
-// $Id: wwassignment.php,v 1.2 2007-09-24 23:12:27 mleventi Exp $
+// $Id: wwassignment.php,v 1.3 2007-09-25 02:19:59 mleventi Exp $
 // language strings for wwmoodle_set
 
 $string['modulename'] = "WeBWorK Problem Set";
@@ -44,10 +44,13 @@ $string['testchanges'] = "Test WeBWorK Connection.";
 
 
 //ERRORS
-$string['construction_error'] = 'An error occured in the connection to the WeBWorK server. Perhaps you have your wsdl path set wrong?';
+$string['construction_error'] = 'An error occured in establishing the connection to WeBWorK.<br>The most likely cause of this problem is that your WSDL path is incorrect.';
+
 $string['event_creation_error'] = 'wwassignment event could not be created.';
 $string['webwork_course_list_map_failure'] = 'Could not retrieve a list of courses on the current WeBWorK server.';
-$string['webwork_course_map_failure'] = 'No WeBWorK course is mapped to the current Moodle course.';
+
+$string['webwork_course_map_failure'] = 'No WeBWorK course is linked to this course.<br>Use the WWLink block to create a connection between this Moodle course and a WeBWorK course.';
+
 $string['webwork_set_map_failure'] = 'No WeBWorK problem set is mapped to the current Moodle problem set.';
 $string['webwork_user_map_failure'] = 'No WeBWorK user is mapped to the current Moodle user.';
 $string['webwork_user_set_map_failure'] = 'The WeBWorK user does not have the current Moodle set assigned.';
