@@ -2,7 +2,7 @@
 
 require_once("$CFG->libdir/soap/nusoap.php");
 
-define(WWASSIGNMENT_DEBUG,1);
+define(WWASSIGNMENT_DEBUG,0);
 
 //////////////////////////////////////////////////////////////////
 //EVENT CREATION AND DELETION
