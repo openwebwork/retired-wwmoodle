@@ -1,5 +1,7 @@
 <?php
 
+require_once("locallib.php");
+
 ////////////////////////////////////////////////////////////////
 //Functions that are called by the Moodle System
 ////////////////////////////////////////////////////////////////
@@ -28,7 +30,7 @@ function wwassignment_add_instance($wwassignment) {
     $returnid = insert_record('wwassignment',$wwassignment);
     
     //Creating events
-    _wwassignment_create_events($wwsetname,$wwassignment->id,$wwsetdata['open_date'],$wwsetdata['due_date']);
+    _wwassignment_create_events($wwsetname,$wwassignment,$wwsetdata['open_date'],$wwsetdata['due_date']);
     
     return $returnid;
 }
@@ -39,11 +41,10 @@ function wwassignment_add_instance($wwassignment) {
 * @return integer The result of the update_record function.
 */
 function wwassignment_update_instance($wwassignment) {
-    global $COURSE;
-    
+    //error_log("updating instance".$wwassignment->id);
     //checking mappings
     $wwclient = new wwassignment_client();
-    $wwcoursename = _wwassignment_mapped_course($COURSE->id,false);
+    $wwcoursename = _wwassignment_mapped_course($wwassignment->course,false);
     $wwsetname = $wwassignment->webwork_set;
     
     //get data from WeBWorK
@@ -52,8 +53,8 @@ function wwassignment_update_instance($wwassignment) {
     
     $returnid = update_record('wwassignment',$wwassignment);
     
-    _wwassignment_delete_events($wwassignment->id);
-    _wwassignment_create_events($wwsetname,$wwassignment->id,$wwsetdata['open_date'],$wwsetdata['due_date']);
+    _wwassignment_delete_events($wwassignment);
+    _wwassignment_create_events($wwsetname,$wwassignment,$wwsetdata['open_date'],$wwsetdata['due_date']);
     
     return $returnid;
 }
@@ -177,10 +178,46 @@ function wwassignment_print_recent_activity($course, $isteacher, $timestart) {
 * @desc Function that is run by the cron job. This makes sure that all data is pushed to webwork.
 */
 function wwassignment_cron() {
+    // refresh wwassignment events in all courses.
+    wwassignment_refresh_events();
+    //error_log("cron:  update instance   has been called");
     //FIXME: Add a call that updates all events with dates (in case people forgot to push)
     return true;
 }
+/**
+ * Make sure up-to-date events are created for all assignment instances
+ *
+ * This standard function will check all instances of this module
+ * and make sure there are up-to-date events created for each of them.
+ * If courseid = 0, then every assignment event in the site is checked, else
+ * only assignment events belonging to the course specified are checked.
+ * This function is used, in its new format, by restore_refresh_events()
+ *
+ * @param $courseid int optional If zero then all assignments for all courses are covered
+ * @return boolean Always returns true
+ */
 
+function wwassignment_refresh_events($courseid = 0) {
+
+    if ($courseid == 0) {
+        if (! $wwassignments = get_records("wwassignment")) {
+            return true;
+        }
+    } else {
+        if (! $wwassignments = get_records("wwassignment", "course", $courseid)) {
+            return true;
+        }
+    }
+    $moduleid = get_field('modules', 'id', 'name', 'wwassignment');
+    //error_log("assignments ". count($wwassignments));
+    foreach($wwassignments as $key => $wwassignment) {
+       //error_log("updating events for ".$wwassignment->id);
+       wwassignment_update_instance($wwassignment);
+        
+
+    }
+    return true;
+}
 
 
 /**
@@ -188,17 +225,14 @@ function wwassignment_cron() {
 * @param string $wwassignmentid The Moodle wwassignment ID.
 * @return array An array of course users (IDs).
 */
-/*function wwassignment_get_participants($wwassignmentid) {
+/*
+function wwassignment_get_participants($wwassignmentid) {
     $wwassignment = get_record('wwassignment', 'id', $wwassignmentid);
     if(!isset($wwassignment)) {
         return array();
     }
     return get_course_users($wwassignment->course);
 }
-
-function wwassignment_refresh_events($courseid = 0) {
-    error_log('wwassignment_refresh_events called');
-    return true;
-}*/
+*/
 
 ?>
