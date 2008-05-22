@@ -62,8 +62,8 @@ if($continue ne "y") {
 }
 
 #Program Root
-print "Please enter the root directory where wwassignment3 module is located. \n";
-print "Example: /tmp/wwmoodle/wwassignment3\n";
+print "Please enter the root directory where wwassignment4 module is located. \n";
+print "Example: /tmp/wwmoodle/wwassignment4\n";
 $wwassignmentRoot = promptUser('');
 
 #Moodle Root
