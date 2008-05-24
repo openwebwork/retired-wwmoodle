@@ -65,7 +65,9 @@ class block_wwlink extends block_base {
         } else {
             $this->content->text = get_string('connected','block_wwlink') . ' ' . $record->webwork_course; 
         }
+        $this->content->footer = '';
         return $this->content;
     }
+ 
 }
 ?>
