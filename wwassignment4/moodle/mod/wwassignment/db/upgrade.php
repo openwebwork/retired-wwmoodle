@@ -1,4 +1,4 @@
-<?php  //$Id: upgrade.php,v 1.1 2008-05-22 14:36:24 gage Exp $
+<?php  //$Id: upgrade.php,v 1.2 2008-05-24 02:29:18 gage Exp $
 
 // This file keeps track of upgrades to
 // the assignment module
@@ -47,7 +47,7 @@ function xmldb_wwassignment_upgrade($oldversion=0) {
     	/// Define field timemodified to be added to wwassignment
     	$table = new XMLDBTable('wwassignment');
         $field = new XMLDBField('timemodified');
-        $field->setAttributes(XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, null, null, '0', 'grade');
+        $field->setAttributes(XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, null, null, '0', 'webwork_set');
         
         /// Launch add field timemodified
         $result = $result && add_field($table, $field);

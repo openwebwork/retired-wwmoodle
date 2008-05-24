@@ -1,7 +1,6 @@
 <?php
 global $CFG;
 require_once("$CFG->libdir/soap/nusoap.php");
-require_once("/Library/WebServer/Documents/moodle/lib/soap/nusoap.php");
 define('WWASSIGNMENT_DEBUG',0);
 
 
