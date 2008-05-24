@@ -1,4 +1,4 @@
-<?php  //$Id: upgrade.php,v 1.2 2008-05-24 02:29:18 gage Exp $
+<?php  //$Id: upgrade.php,v 1.3 2008-05-24 02:34:08 gage Exp $
 
 // This file keeps track of upgrades to
 // the assignment module
@@ -52,13 +52,16 @@ function xmldb_wwassignment_upgrade($oldversion=0) {
         /// Launch add field timemodified
         $result = $result && add_field($table, $field);
         
-        notify('Processing assignment grades, this may take a while if there are many assignments...', 'notifysuccess');
+        // can't do this until you are connected to webwork -- which you won't be on initial upgrades
+        // add this either to wwlink block or to configuration
+        
+        //notify('Processing assignment grades, this may take a while if there are many assignments...', 'notifysuccess');
         // change grade typo to text if no grades MDL-13920
-        require_once $CFG->dirroot.'/mod/wwassignment/lib.php';
+        //require_once $CFG->dirroot.'/mod/wwassignment/lib.php';
         // too much debug output
-        $db->debug = false;
-        wwassignment_update_grades();
-        $db->debug = true;
+        //$db->debug = false;
+        //wwassignment_update_grades();
+        //$db->debug = true;
     }
 
     return $result;
