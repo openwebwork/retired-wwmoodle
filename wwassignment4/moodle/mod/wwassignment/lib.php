@@ -1,6 +1,7 @@
 <?php
 global $CFG;
 require_once("locallib.php");
+
 // debug switch defined in locallib.php  define('WWASSIGNMENT_DEBUG',0);
 
 ////////////////////////////////////////////////////////////////
@@ -14,6 +15,10 @@ require_once("locallib.php");
 //
 //      wwassignment_get_user_grades 
 //   	      could be called from  wwassignment/index.php pages (legacy??)
+//
+// High level grade calls in gradelib.php  (see end of file)
+//
+//
 //
 // Internal grade calling structure
 //
@@ -105,10 +110,10 @@ function wwassignment_update_instance($wwassignment) {
     _wwassignment_delete_events($wwassignment->id);
     _wwassignment_create_events($wwsetname,$wwassignment->id,$wwsetdata['open_date'],$wwsetdata['due_date']);
     
-     //notify gradebook -- updates grade_item only
-
+     //notify gradebook -- update  grades for this wwassignment only
      wwassignment_grade_item_update($wwassignment);
-	debugLog("End wwassignment_update_instance");
+     wwassignment_update_grades($wwassignment);     
+	 debugLog("End wwassignment_update_instance");
     return $returnid;
 }
 
@@ -521,4 +526,52 @@ function wwassignment_refresh_events($courseid = 0) {
     return true;
 }
 
+
+// High level grade calls ins gradelib.php
+
+/**
+ * Returns grading information for given activity - optionally with users grades
+ * Manual, course or category items can not be queried.
+ * @public
+ * @param int $courseid id of course
+ * @param string $itemtype 'mod', 'block'
+ * @param string $itemmodule 'forum, 'quiz', etc.
+ * @param int $iteminstance id of the item module
+ * @param int $userid_or_ids optional id of the graded user or array of ids; if userid not used, returns only information about grade_item
+ * @return array of grade information objects (scaleid, name, grade and locked status, etc.) indexed with itemnumbers
+ */
+ 
+// function grade_get_grades($courseid, $itemtype, $itemmodule, $iteminstance, $userid_or_ids=null) {
+ 
+ 
+ /**
+ * Submit new or update grade; update/create grade_item definition. Grade must have userid specified,
+ * rawgrade and feedback with format are optional. rawgrade NULL means 'Not graded', missing property
+ * or key means do not change existing.
+ *
+ * Only following grade item properties can be changed 'itemname', 'idnumber', 'gradetype', 'grademax',
+ * 'grademin', 'scaleid', 'multfactor', 'plusfactor', 'deleted' and 'hidden'. 'reset' means delete all current grades including locked ones.
+ *
+ * Manual, course or category items can not be updated by this function.
+ * @public
+ * @param string $source source of the grade such as 'mod/assignment'
+ * @param int $courseid id of course
+ * @param string $itemtype type of grade item - mod, block
+ * @param string $itemmodule more specific then $itemtype - assignment, forum, etc.; maybe NULL for some item types
+ * @param int $iteminstance instance it of graded subject
+ * @param int $itemnumber most probably 0, modules can use other numbers when having more than one grades for each user
+ * @param mixed $grades grade (object, array) or several grades (arrays of arrays or objects), NULL if updating grade_item definition only
+ * @param mixed $itemdetails object or array describing the grading item, NULL if no change
+ */
+// function grade_update($source, $courseid, $itemtype, $itemmodule, $iteminstance, $itemnumber, $grades=NULL, $itemdetails=NULL) {
+
+/**
+ * Refetches data from all course activities
+ * @param int $courseid
+ * @param string $modname
+ * @return success
+ */
+// function grade_grab_course_grades($courseid, $modname=null) {
+
 ?>
+
