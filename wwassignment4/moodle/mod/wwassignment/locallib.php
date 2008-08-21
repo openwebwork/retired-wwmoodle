@@ -302,6 +302,8 @@ class wwassignment_client {
                 $this->client = new soap_client($CFG->wwassignment_rpc_wsdl,'wsdl');
                 $err = $this->client->getError();
                 if ($err) {
+                    error_log($err);
+                    error_log($CFG->wwassignment_rpc_wsdl);
                     print_error('construction_error','wwassignment');
                 }
                 $this->defaultparams = array();
