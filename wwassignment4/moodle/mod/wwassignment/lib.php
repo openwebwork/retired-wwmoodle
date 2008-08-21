@@ -175,35 +175,6 @@ function wwassignment_delete_instance($wwassignmentid) {
  * @param int $userid optional user id, 0 means all users
  * @return array array of grades, false if none
  */
-// function assignment_get_user_grades($assignment, $userid=0) {
-//     global $CFG;
-// 
-//     $user = $userid ? "AND u.id = $userid" : "";
-// 
-//     $sql = "SELECT u.id, u.id AS userid, s.grade AS rawgrade, s.submissioncomment AS feedback, s.format AS feedbackformat,
-//                    s.teacher AS usermodified, s.timemarked AS dategraded, s.timemodified AS datesubmitted
-//               FROM {$CFG->prefix}user u, {$CFG->prefix}assignment_submissions s
-//              WHERE u.id = s.userid AND s.assignment = $assignment->id
-//                    $user";
-// 
-//     return get_records_sql($sql);
-// }
-// object returned looks like an array of standard objects
-// (
-//     [22] => stdClass Object
-//         (
-//             [userid] => 22
-//             [rawgrade] => -1
-//             [feedback] => 23
-//             [feedbackformat] => 0
-//             [usermodified] => 2
-//             [dategraded] => 1211200838
-//             [datesubmitted] => 1211199392
-//             [id] => 22
-//         )
-// 
-// )
-
 function wwassignment_get_user_grades($wwassignment,$userid=0) {
 	debugLog("Begin wwassignment_get_user_grades");
 	//debugLog("inputs -- wwassignment" . print_r($wwassignment,true));
@@ -466,7 +437,12 @@ function wwassignment_user_outline($course, $user, $mod, $wwassignment) {
 * @return array Representing time, info pairing.
 */
 function wwassignment_user_complete($course, $user, $mod, $wwassignment) {    
-    return true;
+$aLogs = get_logs("l.userid=$user AND l.course=$course AND l.cmid={$wwassignment->id}");
+    if( count($aLogs) > 0 ) {
+        $return->time = $aLogs[0]->time;
+        $return->info = $aLogs[0]->info;
+    }
+    return $return;
 }
 
 
