@@ -1,4 +1,4 @@
-<?php  //$Id: upgrade.php,v 1.3 2008-05-24 02:34:08 gage Exp $
+<?php  //$Id: upgrade.php,v 1.4 2008-08-24 01:27:57 gage Exp $
 
 // This file keeps track of upgrades to
 // the assignment module
@@ -36,10 +36,16 @@ function xmldb_wwassignment_upgrade($oldversion=0) {
     notify("running 1.9 upgrade");
     if ($result && $oldversion < 2008042072) {
     
+    
+ 
     	/// Define field grade to be added to wwassignment
         //$table = new XMLDBTable('wwassignment');
         //$field = new XMLDBField('grade');
         //$field->setAttributes(XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, null, null, '0', 'webwork_set');
+        
+        // can't do this until you are connected to webwork -- which you won't be on initial upgrades
+        // add this either to wwlink block or to configuration
+       
         
     	/// Launch add field grade
         //$result = $result && add_field($table, $field);
@@ -49,11 +55,18 @@ function xmldb_wwassignment_upgrade($oldversion=0) {
         $field = new XMLDBField('timemodified');
         $field->setAttributes(XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, null, null, '0', 'webwork_set');
         
-        /// Launch add field timemodified
+        /// Launch add field timemodified to wwassignment_bridge
         $result = $result && add_field($table, $field);
         
-        // can't do this until you are connected to webwork -- which you won't be on initial upgrades
-        // add this either to wwlink block or to configuration
+        
+     	/// Define field timemodified to be added to wwassignment
+    	$table = new XMLDBTable('wwassignment_bridge');
+        $field = new XMLDBField('timemodified');
+        $field->setAttributes(XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, null, null, '0', 'webwork_course');
+        
+        /// Launch add field timemodified to wwassignment_bridge
+        $result = $result && add_field($table, $field);
+       
         
         //notify('Processing assignment grades, this may take a while if there are many assignments...', 'notifysuccess');
         // change grade typo to text if no grades MDL-13920
