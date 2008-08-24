@@ -57,11 +57,21 @@ class block_wwlink extends block_base {
     */
     function get_content() {
         global $COURSE;
-        
+        print_r($this->config  );
         $courseid = $COURSE->id;
         $record = get_record('wwassignment_bridge','course',$courseid);
+        print_r($record);
         if(!$record) {
-            $this->content->text = get_string('not_connected','block_wwlink');
+            $wwlinkdata = $this->config;
+            if (!$wwlinkdata) {
+				$this->content->text = get_string('not_connected','block_wwlink');
+			} else {
+				$this->content->text = "connecting to ". $this->config->webwork_link_id;
+				$wwassignmentbridge->course = $courseid;
+				$wwassignmentbridge->webwork_course = $wwlinkdata->webwork_link_id;
+				insert_record('wwassignment_bridge',$wwassignmentbridge);
+			}
+        	
         } else {
             $this->content->text = get_string('connected','block_wwlink') . ' ' . $record->webwork_course; 
         }
