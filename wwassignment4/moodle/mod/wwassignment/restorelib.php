@@ -1,4 +1,4 @@
-<?php //$Id: restorelib.php,v 1.2 2008-08-24 01:27:56 gage Exp $
+<?php //$Id: restorelib.php,v 1.3 2008-08-24 03:03:32 gage Exp $
     //This php script contains all the stuff to backup/restore
     //assignment mods
 
@@ -27,12 +27,12 @@
         global $CFG;
 
         $status = true;
-        error_log("mod id ".$mod->id);
-        if ($mod->id == "66666") {
-        	$wwlinkdata  = backup_getid($restore->backup_unique_code,"wwassignment_bridge","wwassignment_bridge");
-            error_log("wwlink data ".print_r($wwlinkdata, true ));
-            return $status;
-         }
+        //error_log("mod id ".$mod->id);
+//         if ($mod->id == "66666") {
+//         	$wwlinkdata  = backup_getid($restore->backup_unique_code,"wwassignment_bridge","wwassignment_bridge");
+//             error_log("wwlink data ".print_r($wwlinkdata, true ));
+//             return $status;
+//          }
 
         //Get record from backup_ids
         
@@ -78,7 +78,7 @@
         } else {
             $status = false;
         }
-         error_log("mod id is ".print_r($mod,true));
+         //error_log("mod id is ".print_r($mod,true));
         return $status;
     }
 

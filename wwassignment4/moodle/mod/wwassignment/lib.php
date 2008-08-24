@@ -472,16 +472,21 @@ function wwassignment_user_complete($course, $user, $mod, $wwassignment) {
 
 
 function wwassignment_delete_course() {
+    error_log("Begin wwassignment_delete_course --not used yet");
 }
 
 function wwassignment_process_options() {
+    error_log("Begin wwassignment_process_options --not used yet");
+
 }
 
 function wwassignment_reset_course_form() {
+    error_log("Begin wwassignment_reset_course_form --not used yet");
 }
 
 function wwassignment_delete_userdata() {
-    
+     error_log("Begin wwassignment_delete_userdata --not used yet");
+   
 }
 
 /**
@@ -489,6 +494,8 @@ function wwassignment_delete_userdata() {
 */
 function wwassignment_print_recent_activity($course, $isteacher, $timestart) {
         global $CFG;
+        error_log("Begin wwassignment_print_recent_activity --not used yet");
+
         return false;  //  True if anything was printed, otherwise false 
 }
 
@@ -513,7 +520,6 @@ function wwassignment_cron() {
 */
 
 function wwassignment_get_participants($wwassignmentid) {
-    error_log("wwassignment_get_participants");
     $wwassignment = get_record('wwassignment', 'id', $wwassignmentid);
     if(!isset($wwassignment)) {
         return array();

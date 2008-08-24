@@ -1,4 +1,4 @@
-<?php //$Id: backuplib.php,v 1.2 2008-08-24 01:27:56 gage Exp $
+<?php //$Id: backuplib.php,v 1.3 2008-08-24 03:03:32 gage Exp $
     //This php script contains all the stuff to backup
     //wwassignment mods
 
@@ -25,8 +25,8 @@
 
 
     function wwassignment_backup_mods($bf,$preferences) {
-        error_log("wwassignment_backup_mods");
-        //error_log("preferences ".print_r($preferences,true));
+        //error_log("wwassignment_backup_mods");
+        ////error_log("preferences ".print_r($preferences,true));
         global $CFG;
 
         $status = true;
@@ -35,7 +35,7 @@
         $wwassignments = get_records ("wwassignment","course",$preferences->backup_course);
         if ($wwassignments) {
             foreach ($wwassignments as $wwassignment) {
-                //error_log("backing up wwassignment ".$wwassignment->id);
+                ////error_log("backing up wwassignment ".$wwassignment->id);
                 if (backup_mod_selected($preferences,'wwassignment',$wwassignment->id)) {
                     $status = wwassignment_backup_one_mod($bf,$preferences,$wwassignment);
                     // backup files happens in backup_one_mod now too.
@@ -45,15 +45,14 @@
         
 
         
-         error_log("end wwassignment_backup_mods");
+         //error_log("end wwassignment_backup_mods");
          return $status;  
     }
 
     function wwassignment_backup_one_mod($bf,$preferences,$wwassignment) {
-        error_log("wwassignment_backup_one_mod");
-        //error_log("preferences ".print_r($preferences,true));
+        //error_log("wwassignment_backup_one_mod");
+        ////error_log("preferences ".print_r($preferences,true));
         global $CFG;
-        global $BaCkUpWWassignment_bridge ;  // hack to back up wwassignment_bridge table just once
     
         if (is_numeric($wwassignment)) {
             $wwassignment = get_record('wwassignment','id',$wwassignment);
@@ -77,21 +76,9 @@
         $status =fwrite ($bf,end_tag("MOD",3,true));
         
         
-        error_log("end wwassignment_one_backup_mod");
-        error_log("preferences ".print_r($preferences,true));
-        if ($status and !$BaCkUpWWassignment_bridge) {            
-            $BaCkUpWWassignment_bridge = 1 ;     // don't back it up again
-			$wwassignment_bridge  =get_record("wwassignment_bridge","course",$preferences->backup_course);
-			error_log("writing wwassignment_bridge");
-			fwrite ($bf,start_tag("MOD",3,true));
-			//Print wwassignment_bridge data
-			fwrite ($bf,full_tag("ID",4,false,"66666"));
-			fwrite ($bf,full_tag("MODTYPE",4,false,"wwassignment"));
-			fwrite ($bf,full_tag("WEBWORK_COURSE",4,false,$wwassignment_bridge->webwork_course));
-			fwrite ($bf,full_tag("TIMEMODIFIED",4,false,$wwassignment_bridge->timemodified));
-			$status =fwrite ($bf,end_tag("MOD",3,true));
-			error_log("wwassignment_bridge backed up");
-		}
+        //error_log("end wwassignment_one_backup_mod");
+        //error_log("preferences ".print_r($preferences,true));
+
 			
         
            return $status;
@@ -100,10 +87,10 @@
 
     //Return an array of info (name,value)
     function wwassignment_check_backup_mods($course,$user_data=false,$backup_unique_code,$instances=null) {
-           //error_log("wwassignment_check_backup_mods ");
-           //error_log("user_data ".print_r($user_data,true) );
-           //error_log("backup code ".print_r($backup_unique_code,true));
-           //error_log("instance ".print_r($instance,true));
+           ////error_log("wwassignment_check_backup_mods ");
+           ////error_log("user_data ".print_r($user_data,true) );
+           ////error_log("backup code ".print_r($backup_unique_code,true));
+           ////error_log("instance ".print_r($instance,true));
         $info=array();
         if (!empty($instances) && is_array($instances) && count($instances)) {
             foreach ($instances as $id => $instance) {
@@ -119,16 +106,16 @@
             $info[0][1] = 0;
         }
          
-         //error_log("end wwassignment_check_backup_mods");
+         ////error_log("end wwassignment_check_backup_mods");
 
          return $info;
     }
 
     //Return an array of info (name,value)
     function wwassignment_check_backup_mods_instances($instance,$backup_unique_code) {
-        //error_log("wwassignment_check_backup_mods_instances ");
-        //error_log("content ".print_r($content,true));
-        //error_log("preferences ".print_r($preferences,true));
+        ////error_log("wwassignment_check_backup_mods_instances ");
+        ////error_log("content ".print_r($content,true));
+        ////error_log("preferences ".print_r($preferences,true));
 
         $info[$instance->id.'0'][0] = '<b>'.$instance->name.'</b>';
         $info[$instance->id.'0'][1] = '';
@@ -140,7 +127,7 @@
 //                 $info[$instance->id.'1'][1] = 0;
 //             }
 //         }        
-         //error_log("end wwassignment_check_backup_mods_instances");
+         ////error_log("end wwassignment_check_backup_mods_instances");
 
          return $info;
      }
@@ -168,13 +155,13 @@
 
     //Returns an array of assignments id 
     function wwassignment_ids ($course) {
-        //error_log("wwassignment_ids ");
-        //error_log("course ".print_r($course,true));
+        ////error_log("wwassignment_ids ");
+        ////error_log("course ".print_r($course,true));
     
         global $CFG;
         
         
-        //error_log("end wwassignment_ids");
+        ////error_log("end wwassignment_ids");
 
         return get_records_sql ("SELECT a.id, a.course
                                  FROM {$CFG->prefix}wwassignment a

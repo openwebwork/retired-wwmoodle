@@ -185,13 +185,22 @@ function _wwassignment_login_user($wwcoursename,$wwusername) {
 * @return string the name of the webwork course on success and -1 on failure.
 */
 function _wwassignment_mapped_course($courseid,$silent = true) {
-    $wwassignmentbridge = get_record('wwassignment_bridge','course', $courseid);
-    if((isset($wwassignmentbridge)) && (isset($wwassignmentbridge->webwork_course))) {
-        return $wwassignmentbridge->webwork_course;
+    $wwlink = get_record('block','name','wwlink');
+    //error_log("wwlink".print_r($wwlink,true));
+    $blockinstance = get_record('block_instance','blockid', $wwlink->id,'pageid',$courseid,'pagetype','course-view');
+    //error_log("block instance".print_r($blockinstance,true));
+    $block_config = unserialize(base64_decode($blockinstance->configdata));
+    //error_log("config_data ".print_r($block_config,true));
+    if ( isset($block_config) &&  isset($block_config->webwork_link_id)  ) {
+    	return $block_config->webwork_link_id;
     }
-    if(!$silent) {
-        print_error('webwork_course_map_failure','wwassignment');
-    }
+//     $wwassignmentbridge = get_record('wwassignment_bridge','course', $courseid);
+//     if((isset($wwassignmentbridge)) && (isset($wwassignmentbridge->webwork_course))) {
+//         return $wwassignmentbridge->webwork_course;
+//     }
+//     if(!$silent) {
+//         print_error('webwork_course_map_failure','wwassignment');
+//     }
     return -1;
 }
 
