@@ -177,6 +177,24 @@ function _wwassignment_login_user($wwcoursename,$wwusername) {
 ////////////////////////////////////////////////////////////////
 //functions that check mapping existance in the local db
 ////////////////////////////////////////////////////////////////
+/**
+@desc Find the id of the wwlink block class
+*@param none
+*@return  id
+*/
+function _wwasssignment_wwlink_blockid() {
+   $wwlink = get_record('block','name','wwlink');
+   return $wwlink->id;
+}
+/**
+@desc Find the id of the wwassignment module class
+*@param none
+*@return  id
+*/
+function _wwassignment_cmid() {
+   $wwassignment = get_record('mod','name','wwassignment');
+   return $wwassignment->id;
+}
 
 /**
 * @desc Finds the webwork course name from a moodle course id.
@@ -185,9 +203,9 @@ function _wwassignment_login_user($wwcoursename,$wwusername) {
 * @return string the name of the webwork course on success and -1 on failure.
 */
 function _wwassignment_mapped_course($courseid,$silent = true) {
-    $wwlink = get_record('block','name','wwlink');
-    //error_log("wwlink".print_r($wwlink,true));
-    $blockinstance = get_record('block_instance','blockid', $wwlink->id,'pageid',$courseid,'pagetype','course-view');
+    $blockinstance = get_record('block_instance','blockid', 
+		_wwasssignment_wwlink_blockid(),
+		'pageid',$courseid, 'pagetype','course-view');
     //error_log("block instance".print_r($blockinstance,true));
     $block_config = unserialize(base64_decode($blockinstance->configdata));
     //error_log("config_data ".print_r($block_config,true));
