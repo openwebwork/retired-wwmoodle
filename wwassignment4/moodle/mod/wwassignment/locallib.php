@@ -1,6 +1,7 @@
 <?php
 global $CFG;
 require_once("$CFG->libdir/soap/nusoap.php");
+
 define('WWASSIGNMENT_DEBUG',0);
 
 
@@ -85,24 +86,26 @@ function _wwassignment_create_events($wwsetname,$wwassignmentid,$opendate,$dueda
     $event->instance = $wwassignmentid;
     $event->visible  = 1;
     
-    $openevent = $event;
+    // FIXME -- this doesn't create a new object  we'll just handle the due date for now
+    // what you want is $openevent = clone $event  this makes a shallow copy of the object
+    //$openevent = $event;
+    // FIXME -- it's likely that only the due date needs to be posted. once that is sure, clean this up.
     $dueevent = $event;
     
-    $openevent->name .= ' is Open.';
-    $openevent->eventtype = 'open';
-    $openevent->timestart = $opendate;
-    $openevent->timeduration = $duedate - $opendate;
+    //$openevent->name .= ' is Open.';
+    //$openevent->eventtype = 'open';
+    //$openevent->timestart = $opendate;
+    //$openevent->timeduration = $duedate - $opendate;
     
     $dueevent->name .= ' is Due.';
     $dueevent->eventtype = 'due';
     $dueevent->timestart = $duedate;
     $dueevent->timeduration = 1;
-    
-    
+    // error_log("adding a due event");
     $result = 0;
-    if(!add_event($openevent)) {
-        $result = -1;
-    }
+    //if(!add_event($openevent)) {
+    //    $result = -1;
+    //}
     if(!add_event($dueevent)) {
         $result = -1;
     }
@@ -118,6 +121,7 @@ function _wwassignment_create_events($wwsetname,$wwassignmentid,$opendate,$dueda
 function _wwassignment_delete_events($wwassignmentid) {
     if ($events = get_records_select('event', "modulename = 'wwassignment' and instance = '$wwassignmentid'")) {
         foreach($events as $event) {
+               // error_log("deleting  event ".$event->id);
             delete_event($event->id);
         }
     }
@@ -579,7 +583,42 @@ class wwassignment_client {
                 'password' => $userdata->password)));
             return 1;
         }
-        
+       /**  NOT yet ready!!!!!!!!!
+        * @desc Updates data for a user in the WeBWorK course.
+        * @param string $webworkcourse The webwork course name.
+        * @param array $userdata The user data to use in creation.
+        * @param string $permission The permissions of the new user, defaults to 0.
+        * @return Returns 1 on success.
+        */
+        function update_user($webworkcourse,&$userdata,$permission='0') {
+            error_log("update_user called -- not yet ready");
+            $studentid = $userid;
+            # FIXME:  find permission for this user and set permissions appropriately in webwork
+            # FIXME:  find the group(s)  that this person is a member of 
+            # FIXME:  I have used the following scheme:  gage_SEC  use groups ending like this to determine sections in webwork
+            # FIXME:  use ordinary groups   taName    to correspond to recitation sections in WeBWorK
+            #
+            # FIXME:  make it so an update_user function is called whenever the user data in moodle is changed
+            # FIXME:  so if a student switches groups this is reflected in WeBWorK
+            # do get_user first to get current status then update this??
+            $this->handler('put_user',array('courseName' => $webworkcourse, 'record' => array(
+                //'user_id' => $userdata->username,  // can't update this
+                'first_name' => $userdata->firstname,
+                'last_name' => $userdata->lastname,
+                'email_address' => $userdata->email,
+                'student_id' => $studentid,
+                //'status' => 'C',  //can you update this from moodle?
+                'section' => '',
+                'recitation' => '',
+                'comment' => 'moodle updated user')));
+            $this->handler('add_permission',array('courseName' => $webworkcourse,'record' => array(
+                'user_id' => $userdata->username,
+                'permission' => $permission)));
+            $this->handler('add_password',array('courseName' => $webworkcourse,'record' => array(
+                'user_id' => $userdata->username,
+                'password' => $userdata->password)));
+            return 1;
+        }
         /**
         * @desc Creates a user set in WeBWorK
         * @param string $webworkcourse The webwork course name.
