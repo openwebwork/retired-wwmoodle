@@ -84,28 +84,13 @@ function _wwassignment_create_events($wwsetname,$wwassignmentid,$opendate,$dueda
     $event->format = 1;
     $event->modulename = 'wwassignment';
     $event->instance = $wwassignmentid;
-    $event->visible  = 1;
-    
-    // FIXME -- this doesn't create a new object  we'll just handle the due date for now
-    // what you want is $openevent = clone $event  this makes a shallow copy of the object
-    //$openevent = $event;
-    // FIXME -- it's likely that only the due date needs to be posted. once that is sure, clean this up.
-    $dueevent = $event;
-    
-    //$openevent->name .= ' is Open.';
-    //$openevent->eventtype = 'open';
-    //$openevent->timestart = $opendate;
-    //$openevent->timeduration = $duedate - $opendate;
-    
+    $event->visible  = 1;    
     $dueevent->name .= ' is Due.';
     $dueevent->eventtype = 'due';
     $dueevent->timestart = $duedate;
     $dueevent->timeduration = 1;
     // error_log("adding a due event");
     $result = 0;
-    //if(!add_event($openevent)) {
-    //    $result = -1;
-    //}
     if(!add_event($dueevent)) {
         $result = -1;
     }
@@ -196,7 +181,7 @@ function _wwasssignment_wwlink_blockid() {
 *@return  id
 */
 function _wwassignment_cmid() {
-   $wwassignment = get_record('mod','name','wwassignment');
+   $wwassignment = get_record('modules','name','wwassignment');
    return $wwassignment->id;
 }
 

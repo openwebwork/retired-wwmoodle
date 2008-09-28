@@ -1,4 +1,4 @@
-<?php  //$Id: upgrade.php,v 1.5 2008-08-24 03:03:32 gage Exp $
+<?php  //$Id: upgrade.php,v 1.6 2008-09-28 21:07:19 gage Exp $
 
 // This file keeps track of upgrades to
 // the assignment module
@@ -34,39 +34,30 @@ function xmldb_wwassignment_upgrade($oldversion=0) {
 
 //===== 1.9.0 upgrade line ======//
     notify("running 1.9 upgrade");
-    if ($result && $oldversion < 2008042072) {
+    if ($result && $oldversion < 2008092818) {
     
     
  
-    	/// Define field grade to be added to wwassignment
-        //$table = new XMLDBTable('wwassignment');
-        //$field = new XMLDBField('grade');
-        //$field->setAttributes(XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, null, null, '0', 'webwork_set');
-        
+    	//Define field grade to be added to wwassignment
+        $table = new XMLDBTable('wwassignment');
+        $field = new XMLDBField('grade');
+        $field->setAttributes(XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, null, null, '0', 'webwork_set');
         // can't do this until you are connected to webwork -- which you won't be on initial upgrades
         // add this either to wwlink block or to configuration
        
         
     	/// Launch add field grade
-        //$result = $result && add_field($table, $field);
+        $result = $result && add_field($table, $field);
         
     	/// Define field timemodified to be added to wwassignment
     	$table = new XMLDBTable('wwassignment');
         $field = new XMLDBField('timemodified');
-        $field->setAttributes(XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, null, null, '0', 'webwork_set');
+        $field->setAttributes(XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, null, null, '0', 'grade');
         
         /// Launch add field timemodified to wwassignment_bridge
         $result = $result && add_field($table, $field);
         
-        
-     	/// Define field timemodified to be added to wwassignment
-//     	$table = new XMLDBTable('wwassignment_bridge');
-//         $field = new XMLDBField('timemodified');
-//         $field->setAttributes(XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, null, null, '0', 'webwork_course');
-//         
-//         /// Launch add field timemodified to wwassignment_bridge
-//         $result = $result && add_field($table, $field);
-       
+   
         
         //notify('Processing assignment grades, this may take a while if there are many assignments...', 'notifysuccess');
         // change grade typo to text if no grades MDL-13920

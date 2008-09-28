@@ -103,7 +103,7 @@ function wwassignment_update_instance($wwassignment) {
     //get data from WeBWorK
     $wwsetdata = $wwclient->get_assignment_data($wwcoursename,$wwsetname,false);
     $wwassignment->id = $wwassignment->instance;
-    
+    $wwassignment->grade = $wwclient->get_max_grade($wwcoursename,$wwsetname,false);
     $wwassignment->timemodified = time();
     $returnid = update_record('wwassignment',$wwassignment);
     
@@ -264,19 +264,26 @@ function wwassignment_get_user_grades($wwassignment,$userid=0) {
 /**
  * Update grades by firing grade_updated event
  *
- * @param object $assignment null means all wwassignments
+  * @param object $wwassignment object with extra cmidnumber  ??
+ * @param object $wwassignment null means all wwassignments
  * @param int $userid specific user only, 0 mean all
  */
 function wwassignment_update_grades($wwassignment=null, $userid=0, $nullifnone=true) {
     debugLog("Begin wwassignment_update_grades");
-    //debugLog("inputs wwassignment = " . print_r($wwassignment,true));
-    //debugLog("userid = $userid");
+    debugLog("inputs wwassignment = " . print_r($wwassignment,true));
+    debugLog("userid = $userid");
     global $CFG;
     if (!function_exists('grade_update')) { //workaround for buggy PHP versions
         require_once($CFG->libdir.'/gradelib.php');
     }
 
     if ($wwassignment != null) {
+        // Make sure wwassignment has cmid defined isnce wwassignment_grade_item_update requires it
+        if (!$wwassignment->cmidnumber) { // is this ever needed?
+        	$wwassignment->cmidnumber =_wwassignment_cmid() ;
+        	//error_log("adding cmidnumber to wwassignment".$wwassignment->cmidnumber);
+        }
+
         if ($grades = wwassignment_get_user_grades($wwassignment, $userid)) { # fetches all students if userid=0
             foreach($grades as $k=>$v) {
                 if ($v->rawgrade == -1) {
@@ -300,14 +307,18 @@ function wwassignment_update_grades($wwassignment=null, $userid=0, $nullifnone=t
         //debugLog ("sql string = $sql");
         //$tmp = get_recordset_sql($sql);
         //error_log("result is ".print_r($tmp,true) );
-        if ($rs = get_recordset_sql($sql)) {
+       if ($rs = get_recordset_sql($sql)) {
             debugLog("record set found");
             while ($wwassignment = rs_fetch_next_record($rs)) {
-                debugLog("processing next grade");
+                if (!$wwassignment->cmidnumber) { // is this ever needed?
+					$wwassignment->cmidnumber =_wwassignment_cmid() ;
+				}
+ 
+                debugLog("processing next grade wwassignment is ".print_r($wwassignment,true) );
                 if ($wwassignment->grade != 0) {
                     wwassignment_update_grades($wwassignment);
                 } else {
-                    wwassignment_grade_item_update($wwassignment);
+                   wwassignment_grade_item_update($wwassignment);
                 }
             }
             rs_close($rs);
@@ -344,8 +355,7 @@ function wwassignment_grade_item_update ($wwassignment, $grades=NULL) {
         $wwsetname    = _wwassignment_mapped_set($wwassignment->id,false);
     	$wwassignment->grade = $wwclient->get_max_grade($wwcoursename,$wwsetname,false);
     }
-	
-     // debugLog("wwassignment->grade set to ". $wwassignment->grade);
+	// set grade in wwassignment 
 	
     $params = array('itemname'=>$wwassignment->name, 'idnumber'=>$wwassignment->cmidnumber);
 
@@ -369,6 +379,7 @@ function wwassignment_grade_item_update ($wwassignment, $grades=NULL) {
     # grade_update() defined in gradelib.php 
     # $grades=NULL means update grade_item table only, otherwise post grades in grade_grades
     debugLog("End wwassignment_grade_item_update");
+    error_log("update grades for courseid: ". $wwassignment->courseid . " assignment id: ".$wwassignment->id);
     return grade_update('mod/wwassignment', $wwassignment->courseid, 'mod', 'wwassignment', $wwassignment->id, 0, $grades, $params);
 }
 /**
@@ -504,9 +515,12 @@ function wwassignment_print_recent_activity($course, $isteacher, $timestart) {
 * returns true if successful
 */
 function wwassignment_cron() {	
-	error_log("Begin wwassignment_cron --not used yet");
+	error_log("Begin wwassignment_cron");
 
     //FIXME: Add a call that updates all events with dates (in case people forgot to push)
+    //wwassignment_refresh_events();
+    //FIXME: Add a call that updates all grades in all courses
+    wwassignment_update_grades(null,0);  
     error_log("End wwassignment_cron");
     return true;
 }
