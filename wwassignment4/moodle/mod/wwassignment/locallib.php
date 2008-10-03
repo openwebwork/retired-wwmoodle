@@ -90,6 +90,7 @@ function _wwassignment_create_events($wwsetname,$wwassignmentid,$opendate,$dueda
     $event->userid = 0;
     $event->format = 1;
     $event->modulename = 'wwassignment';
+    $event->instance = $wwassignmentid;
     $event->visible  = 1;    
     $event->name .= ' is Due.';
     $event->eventtype = 'due';
@@ -98,7 +99,7 @@ function _wwassignment_create_events($wwsetname,$wwassignmentid,$opendate,$dueda
 
     // error_log("adding a due event");
     $result = 0;
-    if(!add_event($dueevent)) {
+    if(!add_event($event)) {
         $result = -1;
     }
     return $result;
