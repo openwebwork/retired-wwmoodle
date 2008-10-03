@@ -42,18 +42,24 @@ function debugLog($message) {
 
 function _wwassignment_get_course_students($courseid) {
     debugLog("Begin get_course_students($courseid )");
+    debugLog("courseID is ". print_r($courseid, true));
 	$context = get_context_instance(CONTEXT_COURSE, $courseid);
-	//debugLog("context is ". print_r($context, true));
+	debugLog("context is ". print_r($context, true));
 	
 	$users = array();
 	$roles_used_in_context = get_roles_used_in_context($context);
+	//debugLog("roles used ". print_r($roles_used_in_context, true));
 	foreach($roles_used_in_context as $role) {
 		$roleid = $role->id;
- 		//debugLog( "roleid should be 5 for a student $roleid");
-		$users = array_merge($users, get_role_users($roleid, $context, true) );//FIXME a user could be liseted twice
+ 		debugLog( "roleid should be 5 for a student $roleid");
+ 		//debugLog(get_role_users($roleid, $context, true) );
+ 		if ($new_users = get_role_users($roleid, $context, true) ) {
+			$users = array_merge($users, $new_users );//FIXME a user could be liseted twice
+		}
+		debugLog("display users ".print_r($users,true));
 	}
- 	debugLog("display users in course--off");
-	//debugLog(print_r($users, true));
+ 	debugLog("display users in course--on");
+	debugLog("users again".print_r($users, true));
 	
     debugLog("End get_course_students($courseid )");
 	return $users;
@@ -74,6 +80,7 @@ function _wwassignment_get_course_students($courseid) {
 * @return integer 0 on success. -1 on error.
 */
 function _wwassignment_create_events($wwsetname,$wwassignmentid,$opendate,$duedate) {
+    error_log("enter create_events");
     global $COURSE;
     unset($event);
     $event->name = $wwsetname;
@@ -83,12 +90,12 @@ function _wwassignment_create_events($wwsetname,$wwassignmentid,$opendate,$dueda
     $event->userid = 0;
     $event->format = 1;
     $event->modulename = 'wwassignment';
-    $event->instance = $wwassignmentid;
     $event->visible  = 1;    
-    $dueevent->name .= ' is Due.';
-    $dueevent->eventtype = 'due';
-    $dueevent->timestart = $duedate;
-    $dueevent->timeduration = 1;
+    $event->name .= ' is Due.';
+    $event->eventtype = 'due';
+    $event->timestart = $duedate;
+    $event->timeduration = 1;
+
     // error_log("adding a due event");
     $result = 0;
     if(!add_event($dueevent)) {
