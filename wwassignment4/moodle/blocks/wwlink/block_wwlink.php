@@ -78,6 +78,9 @@ class block_wwlink extends block_base {
 //         $this->content->footer = '';
 //         return $this->content;
 //     }
+
+// new method for storing state:
+// we can store it in the configuration data for the block! we don't need the wwassignment_bridge table to store state.
     function get_content() {
         global $COURSE;
         //print_r($this->config  );
