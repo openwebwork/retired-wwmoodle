@@ -547,7 +547,8 @@ class wwassignment_client {
         * @param string $webworkcourse The webwork course name.
         * @param array $userdata The user data to use in creation.
         * @param string $permission The permissions of the new user, defaults to 0.
-        * @return Returns 1 on success.
+        * @return Returns username on success.
+        
         */
         function create_user($webworkcourse,&$userdata,$permission='0') {
             $studentid = $userid;
@@ -574,14 +575,14 @@ class wwassignment_client {
             $this->handler('add_password',array('courseName' => $webworkcourse,'record' => array(
                 'user_id' => $userdata->username,
                 'password' => $userdata->password)));
-            return 1;
+            return $userdata->username;
         }
        /**  NOT yet ready!!!!!!!!!
         * @desc Updates data for a user in the WeBWorK course.
         * @param string $webworkcourse The webwork course name.
         * @param array $userdata The user data to use in creation.
         * @param string $permission The permissions of the new user, defaults to 0.
-        * @return Returns 1 on success.
+        * @return Returns username on success.
         */
         function update_user($webworkcourse,&$userdata,$permission='0') {
             error_log("update_user called -- not yet ready");
@@ -610,7 +611,7 @@ class wwassignment_client {
             $this->handler('add_password',array('courseName' => $webworkcourse,'record' => array(
                 'user_id' => $userdata->username,
                 'password' => $userdata->password)));
-            return 1;
+            return $userdata->username;
         }
         /**
         * @desc Creates a user set in WeBWorK
