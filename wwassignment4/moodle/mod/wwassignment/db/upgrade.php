@@ -1,4 +1,4 @@
-<?php  //$Id: upgrade.php,v 1.6 2008-09-28 21:07:19 gage Exp $
+<?php  //$Id: upgrade.php,v 1.7 2009-09-20 22:02:04 gage Exp $
 
 // This file keeps track of upgrades to
 // the assignment module
@@ -15,7 +15,7 @@
 // will tell you what you need to do.
 //
 // The commands in here will all be database-neutral,
-// using the functions defined in lib/ddllib.php
+// using the functions defined in lib/ddllib.ph
 
 function xmldb_wwassignment_upgrade($oldversion=0) {
 
@@ -33,7 +33,6 @@ function xmldb_wwassignment_upgrade($oldversion=0) {
 /// }
 
 //===== 1.9.0 upgrade line ======//
-    notify("running 1.9 upgrade");
     if ($result && $oldversion < 2008092818) {
     
     
@@ -42,8 +41,6 @@ function xmldb_wwassignment_upgrade($oldversion=0) {
         $table = new XMLDBTable('wwassignment');
         $field = new XMLDBField('grade');
         $field->setAttributes(XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, null, null, '0', 'webwork_set');
-        // can't do this until you are connected to webwork -- which you won't be on initial upgrades
-        // add this either to wwlink block or to configuration
        
         
     	/// Launch add field grade

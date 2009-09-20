@@ -469,10 +469,27 @@ class wwassignment_client {
         * @return integer The max grade on success or -1 on failure.
         */
         //FIXME -- this assumes each problem gets 1 point which is false
+//         function get_max_grade($webworkcourse,$webworkset,$silent = true) {
+//             $record = $this->handler('list_global_problems',array('courseName' => $webworkcourse,'setID' => $webworkset));
+//             if(isset($record)) {
+//                 return count($record);
+//             }
+//             if(!$silent) {
+//                 print_error('webwork_set_map_failure','wwassignment');
+//             }
+//             return -1;
+//             
+//         }
+
         function get_max_grade($webworkcourse,$webworkset,$silent = true) {
-            $record = $this->handler('list_global_problems',array('courseName' => $webworkcourse,'setID' => $webworkset));
+            $record = $this->handler('get_all_global_problems',array('courseName' => $webworkcourse,'setID' => $webworkset));
+            $totalpoints =0;
             if(isset($record)) {
-                return count($record);
+            	foreach ($record as $set) {
+            		$totalpoints = $totalpoints + $set[value];
+                	
+                }
+                return $totalpoints;
             }
             if(!$silent) {
                 print_error('webwork_set_map_failure','wwassignment');

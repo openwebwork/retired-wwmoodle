@@ -55,7 +55,7 @@ function wwassignment_add_instance($wwassignment) {
 
     debugLog("Begin wwassignment_add_instance");
     debugLog("input wwassignment ");
-    //debugLot( print_r($wwassignment, true) );
+    //debugLog( print_r($wwassignment, true) );
     
     //Get data about the set from WebWorK
     $wwclient = new wwassignment_client();
@@ -66,8 +66,8 @@ function wwassignment_add_instance($wwassignment) {
 
     
     //Attaching Moodle Set to WeBWorK Set
-    //debugLog("saving wwassignment ");
-    //debugLog( print_r($wwassignment,true));
+    debugLog("saving wwassignment ");
+    debugLog( print_r($wwassignment,true));
     
      $wwassignment->timemodified = time();   
     if ($returnid = insert_record("wwassignment", $wwassignment)) {
@@ -75,7 +75,7 @@ function wwassignment_add_instance($wwassignment) {
 
 		//Creating events
 		_wwassignment_create_events($wwsetname,$wwassignment->id,$wwsetdata['open_date'],$wwsetdata['due_date']);
-    
+    debugLog("notify gradebook");
 		//notify gradebook
 		 wwassignment_grade_item_update($wwassignment);
 	}

@@ -42,9 +42,12 @@ $strtopic  = get_string("topic");
 $strdescription = get_string('description');
 $stropendate = get_string("open_date", "wwassignment");
 $strduedate = get_string("due_date", "wwassignment");
+$strtotalpoints = get_string("total_points","wwassignment");
+
+
 
 if ($course->format == "weeks") {
-    $table->head  = array ($strweek, $strname,$strdescription, $stropendate, $strduedate);
+    $table->head  = array ($strweek, $strname,$strdescription, $stropendate, $strduedate, $strtotalpoints);
     $table->align = array ("center", "left", "left", "left", "left");
 } else if ($course->format == "topics") {
     $table->head  = array ($strtopic, $strname,$strdescription, $stropendate, $strduedate);
@@ -71,7 +74,8 @@ foreach ($wwassignments as $wwassignment) {
             $link = "<a href=\"view.php?id=$wwassignment->coursemodule\">$wwassignment->name</a>";
         }
         if ($course->format == "weeks" or $course->format == "topics") {
-            $table->data[] = array ($wwassignment->section,  $link, $wwassignment->description, strftime("%c", $wwsetinfo['open_date']), strftime("%c", $wwsetinfo['due_date']));
+            $totalpoints = $wwclient->get_max_grade($wwcoursename, $wwsetname,false);
+            $table->data[] = array ($wwassignment->section,  $link, $wwassignment->description, strftime("%c", $wwsetinfo['open_date']), strftime("%c", $wwsetinfo['due_date']), $totalpoints);
         } else {
             $table->data[] = array ($link, $wwassignment->description, strftime("%c", $wwsetinfo['open_date']), strftime("%c", $wwsetinfo['due_date']));
         }

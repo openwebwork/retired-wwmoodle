@@ -1,5 +1,5 @@
 <?php
-// $Id: wwassignment.php,v 1.1 2008-08-21 18:01:54 gage Exp $
+// $Id: wwassignment.php,v 1.2 2009-09-20 22:02:04 gage Exp $
 // language strings for wwmoodle_set
 
 $string['modulename'] = "WeBWorK Problem Set";
@@ -10,6 +10,7 @@ $string['set_name'] = $string['modulename'];
 //index list
 $string['open_date'] = "Opened";
 $string['due_date'] = "Due";
+$string['total_points'] = "Total points";
 
 //viewing page
 $string['go_to_webwork'] = "Administer the WeBWorK portion of this course.";

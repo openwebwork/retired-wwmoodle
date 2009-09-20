@@ -35,8 +35,9 @@ if($id) {
 
 //catch the guests
 global $USER;
-if($USER->username == 'guest') {
-    print_error('Guests cannot view WeBWorK Problem Sets');
+if($USER->username == 'guest') {  # this allows guests to view webwork (signed in as user guest)
+    #FIXME  -- replace this with a method that uses the automatic guest sign in on webwork.
+    // print_error('Guests cannot view WeBWorK Problem Sets');
 }
 
 //force login
@@ -50,6 +51,7 @@ $wwusername = $USER->username;
 $wwsetname = $wwassignment->webwork_set;
 _wwassignment_mapcreate_user($wwcoursename,$wwusername);
 _wwassignment_mapcreate_user_set($wwcoursename,$wwusername,$wwsetname);
+
 $wwkey = _wwassignment_login_user($wwcoursename,$wwusername);
 $wwsetlink = _wwassignment_link_to_set_auto_login($wwcoursename,$wwsetname,$wwusername,$wwkey);
 
