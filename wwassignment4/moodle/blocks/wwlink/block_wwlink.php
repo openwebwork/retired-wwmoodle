@@ -28,7 +28,7 @@ class block_wwlink extends block_base {
         return array('all' => false, 'course-view' => true);
     }
     
-<<<<<<< block_wwlink.php
+
 function user_can_edit() {
 	require_capability('moode/site:doanything',get_context_instance(CONTEXT_SYSTEM));
 	return parent::user_can_edit();
