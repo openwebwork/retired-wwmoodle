@@ -543,18 +543,22 @@ function wwassignment_update_dirty_sets() {  // update grades for all instances 
 			if (!$wwassignment->cmidnumber) { // is this ever needed?
 				$wwassignment->cmidnumber =_wwassignment_cmid() ;
 			}
-             $logdata = get_logs("l.info = $wwassignment->wwinstanceid"); # the instance number of this assignment is stored in info
+             $logdata = get_logs("l.info = $wwassignment->id"); # the instance number of this assignment is stored in info
              $most_recent_record = array_shift($logdata);
              $wwassignment->timemodified  = $most_recent_record->time;
              if ($wwassignment->timemodified > $lastcron) {
-             	error_log("instance needs update.  timemodified ".$wwassignment->timemodified." lastcron $lastcron wwassignment instance id ".$wwassignment->id." set name ".$wwassignment->webwork_set);
+             	error_log("instance needs update.  timemodified ".$wwassignment->timemodified.
+             	     " lastcron $lastcron course id".$wwassignment->course." wwassignment id ".$wwassignment->id." wwinstance id".$wwassignment->wwinstanceid.
+             	     " set name ".$wwassignment->name);
              	if ($wwassignment->grade != 0) {
 					wwassignment_update_grades($wwassignment);
 				} else {
 				   wwassignment_grade_item_update($wwassignment);
 				}
              } else {
-             	error_log("no update needed.  timemodified ".$wwassignment->timemodified." lastcron $lastcron  wwassignment instance id ".$wwassignment->id." set name ".$wwassignment->webwork_set);
+             	error_log("no update needed.  timemodified ".$wwassignment->timemodified.
+             	 " lastcron $lastcron course id".$wwassignment->course." wwassignment id ".$wwassignment->id." wwinstance id".$wwassignment->wwinstanceid.
+             	" set name ".$wwassignment->name);
              }
 
 		}
