@@ -520,11 +520,11 @@ function wwassignment_cron() {
     //wwassignment_refresh_events();
     //FIXME: Add a call that updates all grades in all courses
     //wwassignment_update_grades(null,0); 
-    try {
+   //try {    // try didn't work on some php systems -- leave it out.
     	 wwassignment_update_dirty_sets();
-    } catch (Exception $e) {
-    	error_log("\n   Unable to run wwassignment_update_dirty_sets ".$e->getMessage());
-    }
+    //} catch (Exception $e) {
+    	//error_log("\n   Unable to run wwassignment_update_dirty_sets ".$e->getMessage());
+    //}
     error_log("End wwassignment_cron");
     return true;
 }
