@@ -270,7 +270,7 @@ function wwassignment_get_user_grades($wwassignment,$userid=0) {
  */
 function wwassignment_update_grades($wwassignment=null, $userid=0, $nullifnone=true) {
     debugLog("Begin wwassignment_update_grades");
-    debugLog("inputs wwassignment = " . print_r($wwassignment,true));
+    //debugLog("inputs wwassignment = " . print_r($wwassignment,true));
     debugLog("userid = $userid");
     global $CFG;
     if (!function_exists('grade_update')) { //workaround for buggy PHP versions
@@ -290,9 +290,7 @@ function wwassignment_update_grades($wwassignment=null, $userid=0, $nullifnone=t
                     $grades[$k]->rawgrade = null;
                 }
             }
-            debugLog("call wwassignment to update grade_item and record grades in gradebook ");
-            //debugLog(print_r($grades,true));
-            wwassignment_grade_item_update($wwassignment, $grades);
+             wwassignment_grade_item_update($wwassignment, $grades);
         } else {
             wwassignment_grade_item_update($wwassignment);
         }
@@ -314,7 +312,7 @@ function wwassignment_update_grades($wwassignment=null, $userid=0, $nullifnone=t
 					$wwassignment->cmidnumber =_wwassignment_cmid() ;
 				}
  
-                debugLog("processing next grade wwassignment is ".print_r($wwassignment,true) );
+                //debugLog("processing next grade wwassignment is ".print_r($wwassignment,true) );
                 if ($wwassignment->grade != 0) {
                     wwassignment_update_grades($wwassignment);
                 } else {
@@ -379,7 +377,7 @@ function wwassignment_grade_item_update ($wwassignment, $grades=NULL) {
     # grade_update() defined in gradelib.php 
     # $grades=NULL means update grade_item table only, otherwise post grades in grade_grades
     debugLog("End wwassignment_grade_item_update");
-    error_log("update grades for courseid: ". $wwassignment->courseid . " assignment id: ".$wwassignment->id);
+    error_log("update grades for courseid: ". $wwassignment->courseid . " assignment id: ".$wwassignment->id." time modified ".$wwassignment->timemodified);
     return grade_update('mod/wwassignment', $wwassignment->courseid, 'mod', 'wwassignment', $wwassignment->id, 0, $grades, $params);
 }
 /**
@@ -511,7 +509,8 @@ function wwassignment_print_recent_activity($course, $isteacher, $timestart) {
 }
 
 /**
-* @desc Function that is run by the cron job. This makes sure that all data is pushed to webwork.
+* @desc Function that is run by the cron job. This makes sure that 
+* the grades and all other data are pulled from webwork.
 * returns true if successful
 */
 function wwassignment_cron() {	
@@ -520,11 +519,50 @@ function wwassignment_cron() {
     //FIXME: Add a call that updates all events with dates (in case people forgot to push)
     //wwassignment_refresh_events();
     //FIXME: Add a call that updates all grades in all courses
-    wwassignment_update_grades(null,0);  
+    //wwassignment_update_grades(null,0); 
+    try {
+    	 wwassignment_update_dirty_sets();
+    } catch (Exception $e) {
+    	error_log("\n   Unable to run wwassignment_update_dirty_sets ".$e->getMessage());
+    }
     error_log("End wwassignment_cron");
     return true;
 }
+function wwassignment_update_dirty_sets() {  // update grades for all instances which have been modified since last cronjob
+    global $CFG;
+	$timenow = time();
+	$lastcron = get_field("modules","lastcron","name","wwassignment");
+	error_log ("lastcron is $lastcron and time now is $timenow");
+	$sql = "SELECT a.*, cm.idnumber as cmidnumber, a.course as courseid, cm.id as wwinstanceid
+			  FROM {$CFG->prefix}wwassignment a, {$CFG->prefix}course_modules cm, {$CFG->prefix}modules m
+			 WHERE m.name='wwassignment' AND m.id=cm.module AND cm.instance=a.id";
 
+	//error_log ("sql string = $sql");
+	if ($rs = get_recordset_sql($sql)) {
+		while ($wwassignment = rs_fetch_next_record($rs)) {
+			if (!$wwassignment->cmidnumber) { // is this ever needed?
+				$wwassignment->cmidnumber =_wwassignment_cmid() ;
+			}
+             $logdata = get_logs("l.info = $wwassignment->wwinstanceid"); # the instance number of this assignment is stored in info
+             $most_recent_record = array_shift($logdata);
+             $wwassignment->timemodified  = $most_recent_record->time;
+             if ($wwassignment->timemodified > $lastcron) {
+             	error_log("instance needs update.  timemodified ".$wwassignment->timemodified." lastcron $lastcron wwassignment instance id ".$wwassignment->id." set name ".$wwassignment->webwork_set);
+             	if ($wwassignment->grade != 0) {
+					wwassignment_update_grades($wwassignment);
+				} else {
+				   wwassignment_grade_item_update($wwassignment);
+				}
+             } else {
+             	error_log("no update needed.  timemodified ".$wwassignment->timemodified." lastcron $lastcron  wwassignment instance id ".$wwassignment->id." set name ".$wwassignment->webwork_set);
+             }
+
+		}
+		rs_close($rs);
+	}
+	error_log("done with updating dirty sets");
+	return(true);
+}
 
 
 /**
