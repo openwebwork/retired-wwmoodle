@@ -55,7 +55,7 @@ _wwassignment_mapcreate_user_set($wwcoursename,$wwusername,$wwsetname);
 $wwkey = _wwassignment_login_user($wwcoursename,$wwusername);
 $wwsetlink = _wwassignment_link_to_set_auto_login($wwcoursename,$wwsetname,$wwusername,$wwkey);
 
-add_to_log($course->id, "wwassignment", "view", "view.php?id=$cm->id", "$wwassignment->id");
+add_to_log($course->id, "wwassignment", "view", "view.php?id=$cm->id", "$wwassignmentid",_wwassignment_cmid());
 
 /// Print the page header
 
