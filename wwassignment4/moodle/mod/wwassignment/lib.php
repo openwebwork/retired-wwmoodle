@@ -538,14 +538,27 @@ function wwassignment_update_dirty_sets() {  // update grades for all instances 
 			 WHERE m.name='wwassignment' AND m.id=cm.module AND cm.instance=a.id";
 
 	//error_log ("sql string = $sql");
+	// Could we speed this up by getting all of the log records pertaining to webwork in one go?
+	// Or perhaps just the log records which have occured after the lastcron date
+	// Then create a hash with wwassignment->id  => timemodified
+	// means just one database lookup
+	$logRecords = get_logs("l.module LIKE \"wwassignment\" ", "l.time ASC");
+	$wwmodificationtime=array();
+	foreach ($logRecords as $record) {     
+	    $wwid =$record->info;
+		$wwmodificationtime["$wwid"] = $record->time;
+	}
+	error_log("last modification times".print_r($wwmodificationtime,true));
+	
+	
 	if ($rs = get_recordset_sql($sql)) {
 		while ($wwassignment = rs_fetch_next_record($rs)) {
 			if (!$wwassignment->cmidnumber) { // is this ever needed?
 				$wwassignment->cmidnumber =_wwassignment_cmid() ;
 			}
-             $logdata = get_logs("l.info = $wwassignment->id"); # the instance number of this assignment is stored in info
-             $most_recent_record = array_shift($logdata);
-             $wwassignment->timemodified  = $most_recent_record->time;
+             //$logdata = get_logs("l.info = $wwassignment->id"); # the instance number of this assignment is stored in info
+             //$most_recent_record = array_shift($logdata);
+             $wwassignment->timemodified  = $wwmodificationtime[$wwassignment->id];
              if ($wwassignment->timemodified > $lastcron) {
              	error_log("instance needs update.  timemodified ".$wwassignment->timemodified.
              	     " lastcron $lastcron course id".$wwassignment->course." wwassignment id ".$wwassignment->id." wwinstance id".$wwassignment->wwinstanceid.
