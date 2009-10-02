@@ -533,35 +533,43 @@ function wwassignment_update_dirty_sets() {  // update grades for all instances 
 	$timenow = time();
 	$lastcron = get_field("modules","lastcron","name","wwassignment");
 	error_log ("lastcron is $lastcron and time now is $timenow");
-	$sql = "SELECT a.*, cm.idnumber as cmidnumber, a.course as courseid, cm.id as wwinstanceid
-			  FROM {$CFG->prefix}wwassignment a, {$CFG->prefix}course_modules cm, {$CFG->prefix}modules m
-			 WHERE m.name='wwassignment' AND m.id=cm.module AND cm.instance=a.id";
-
+	
 	//error_log ("sql string = $sql");
 	// Could we speed this up by getting all of the log records pertaining to webwork in one go?
 	// Or perhaps just the log records which have occured after the lastcron date
 	// Then create a hash with wwassignment->id  => timemodified
 	// means just one database lookup
+
 	$logRecords = get_logs("l.module LIKE \"wwassignment\" AND l.time >$lastcron ", "l.time ASC");
 	$wwmodificationtime=array();
 	foreach ($logRecords as $record) {     
-	    $wwid =$record->info;
-		$wwmodificationtime["$wwid"] = $record->time;
+		$wwmodtimes[$wwid =$record->info] = $record->time;
 	}
-	error_log("last modification times".print_r($wwmodificationtime,true));
+
+	// Create an array with the wwid values
+	$idValues= "( ".implode(",", array_keys($wwmodtimes) ). " )";
+
+	//error_log("values string $idValues");
+	//error_log("last modification times".print_r($wwmodtimes,true));
+
+	$sql = "SELECT a.*, cm.idnumber as cmidnumber, a.course as courseid, cm.id as wwinstanceid
+			  FROM {$CFG->prefix}wwassignment a, {$CFG->prefix}course_modules cm, {$CFG->prefix}modules m
+			 WHERE m.name='wwassignment' AND m.id=cm.module AND cm.instance=a.id AND a.id IN $idValues";
+
+	$sql3 = "SELECT a.* FROM {$CFG->prefix}wwassignment a WHERE a.id IN $idValues";
+	
+	//error_log("last modification times".print_r($wwmodificationtime,true));
 	
 	if ($rs = get_recordset_sql($sql)) {
 		while ($wwassignment = rs_fetch_next_record($rs)) {
 			if (!$wwassignment->cmidnumber) { // is this ever needed?
 				$wwassignment->cmidnumber =_wwassignment_cmid() ;
 			}
-             //$logdata = get_logs("l.info = $wwassignment->id"); # the instance number of this assignment is stored in info
-             //$most_recent_record = array_shift($logdata);
-             $wwassignment->timemodified  = $wwmodificationtime[$wwassignment->id];
+             $wwassignment->timemodified  = $wwmodtimes[$wwassignment->id];
              if ($wwassignment->timemodified > $lastcron) {
              	error_log("instance needs update.  timemodified ".$wwassignment->timemodified.
-             	     " lastcron $lastcron course id".$wwassignment->course." wwassignment id ".$wwassignment->id." wwinstance id".$wwassignment->wwinstanceid.
-             	     " set name ".$wwassignment->name);
+             	     ", lastcron $lastcron, course id ".$wwassignment->course.", wwassignment id ".$wwassignment->id.
+             	     ", set name ".$wwassignment->name.", cm.id ".$wwassignment->wwinstanceid);
              	if ($wwassignment->grade != 0) {
 					wwassignment_update_grades($wwassignment);
 				} else {
@@ -569,8 +577,8 @@ function wwassignment_update_dirty_sets() {  // update grades for all instances 
 				}
              } else {
              	error_log("no update needed.  timemodified ".$wwassignment->timemodified.
-             	 " lastcron $lastcron course id".$wwassignment->course." wwassignment id ".$wwassignment->id." wwinstance id".$wwassignment->wwinstanceid.
-             	" set name ".$wwassignment->name);
+             	 ", lastcron $lastcron, course id ".$wwassignment->course.", wwassignment id ".$wwassignment->id.
+             	", set name ".$wwassignment->name.", cm.id ".$wwassignment->wwinstanceid);
              }
 
 		}
