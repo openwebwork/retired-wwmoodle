@@ -542,14 +542,13 @@ function wwassignment_update_dirty_sets() {  // update grades for all instances 
 	// Or perhaps just the log records which have occured after the lastcron date
 	// Then create a hash with wwassignment->id  => timemodified
 	// means just one database lookup
-	$logRecords = get_logs("l.module LIKE \"wwassignment\" ", "l.time ASC");
+	$logRecords = get_logs("l.module LIKE \"wwassignment\" AND l.time >$lastcron ", "l.time ASC");
 	$wwmodificationtime=array();
 	foreach ($logRecords as $record) {     
 	    $wwid =$record->info;
 		$wwmodificationtime["$wwid"] = $record->time;
 	}
 	error_log("last modification times".print_r($wwmodificationtime,true));
-	
 	
 	if ($rs = get_recordset_sql($sql)) {
 		while ($wwassignment = rs_fetch_next_record($rs)) {
