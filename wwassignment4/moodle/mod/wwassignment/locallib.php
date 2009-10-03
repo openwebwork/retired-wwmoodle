@@ -79,13 +79,16 @@ function _wwassignment_get_course_students($courseid) {
 * @param $duedate integer The UNIX timestamp of the due date.
 * @return integer 0 on success. -1 on error.
 */
-function _wwassignment_create_events($wwsetname,$wwassignmentid,$opendate,$duedate) {
-    error_log("enter create_events");
+function _wwassignment_create_events($wwsetname,$wwassignmentid,$opendate,$duedate, $courseid=0) {
+    error_log("enter create_events for set $wwsetname id $wwassignmentid date $opendate $duedate course $courseid");
     global $COURSE;
+    if (!courseid) {
+    	$courseid =$COURSE->id;
+    }
     unset($event);
-    $event->name = $wwsetname;
+    $event->name = addslashes($wwsetname);
     $event->description = 'WeBWorK Set Event';
-    $event->courseid = $COURSE->id;
+    $event->courseid = $courseid;
     $event->groupid = 0;
     $event->userid = 0;
     $event->format = 1;
@@ -99,7 +102,10 @@ function _wwassignment_create_events($wwsetname,$wwassignmentid,$opendate,$dueda
 
     // error_log("adding a due event");
     $result = 0;
-    if(!add_event($event)) {
+    $calendareventid = add_event($event);
+    error_log("calendareventid $calendareventid created");
+    if(!$calendareventid) {
+        error_log("can't create calendarevent for set $wwsetname wwid $wwassignmentid date $opendate $duedate course $courseid");
         $result = -1;
     }
     return $result;
@@ -119,6 +125,68 @@ function _wwassignment_delete_events($wwassignmentid) {
         }
     }
     return 0;
+}
+// function chat_refresh_events($courseid = 0) {
+// // This standard function will check all instances of this module
+// // and make sure there are up-to-date events created for each of them.
+// // If courseid = 0, then every chat event in the site is checked, else
+// // only chat events belonging to the course specified are checked.
+// // This function is used, in its new format, by restore_refresh_events()
+// 
+//     if ($courseid) {
+//         if (! $chats = get_records("chat", "course", $courseid)) {
+//             return true;
+//         }
+//     } else {
+//         if (! $chats = get_records("chat")) {
+//             return true;
+//         }
+//     }
+//     $moduleid = get_field('modules', 'id', 'name', 'chat');
+// 
+//     foreach ($chats as $chat) {
+//         $event = NULL;
+//         $event->name        = addslashes($chat->name);
+//         $event->description = addslashes($chat->intro);
+//         $event->timestart   = $chat->chattime;
+// 
+//         if ($event->id = get_field('event', 'id', 'modulename', 'chat', 'instance', $chat->id)) {
+//             update_event($event);
+// 
+//         } else {
+//             $event->courseid    = $chat->course;
+//             $event->groupid     = 0;
+//             $event->userid      = 0;
+//             $event->modulename  = 'chat';
+//             $event->instance    = $chat->id;
+//             $event->eventtype   = $chat->schedule;
+//             $event->timeduration = 0;
+//             $event->visible     = get_field('course_modules', 'visible', 'module', $moduleid, 'instance', $chat->id);
+// 
+//             add_event($event);
+//         }
+//     }
+//     return true;
+// }
+function _wwassignment_refresh_event($wwassignment) {
+	$cid = $wwassignment->course;
+	$wwcoursename = _wwassignment_mapped_course($cid,false); 
+	if ( $wwcoursename== -1) {
+		error_log("Can't connect course $cid to webwork");
+		return false;
+	}
+	$wwclient = new wwassignment_client();   
+	$wwsetname = $wwassignment->webwork_set;
+	error_log("updating events for $wwcoursename $wwsetname");
+	//get data from WeBWorK
+	$wwsetdata = $wwclient->get_assignment_data($wwcoursename,$wwsetname,false);
+	$wwassignment->grade = $wwclient->get_max_grade($wwcoursename,$wwsetname,false);
+	$wwassignment->timemodified = time();
+	$returnid = update_record('wwassignment',$wwassignment);
+	// update event
+	_wwassignment_delete_events($wwassignment->id);
+	_wwassignment_create_events($wwsetname,$wwassignment->id,$wwsetdata['open_date'],$wwsetdata['due_date'],$cid);
+	return true;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -208,15 +276,9 @@ function _wwassignment_mapped_course($courseid,$silent = true) {
     //error_log("config_data ".print_r($block_config,true));
     if ( isset($block_config) &&  isset($block_config->webwork_link_id)  ) {
     	return $block_config->webwork_link_id;
+    } else {
+    	return -1;
     }
-//     $wwassignmentbridge = get_record('wwassignment_bridge','course', $courseid);
-//     if((isset($wwassignmentbridge)) && (isset($wwassignmentbridge->webwork_course))) {
-//         return $wwassignmentbridge->webwork_course;
-//     }
-//     if(!$silent) {
-//         print_error('webwork_course_map_failure','wwassignment');
-//     }
-    return -1;
 }
 
 /**
