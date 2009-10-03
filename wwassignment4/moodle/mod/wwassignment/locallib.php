@@ -83,7 +83,7 @@ function _wwassignment_get_course_students($courseid) {
 function _wwassignment_create_events($wwassignment,$wwsetdata ) {
     error_log("enter create_events for set ".$wwassignment->name." id ".$wwassignment->id." date ".$wwsetdata['open_date']." ".$wwsetdata['due_date'] );
     global $COURSE;
-    error_log("set data".print_r($wwsetdata,true));
+    //error_log("set data".print_r($wwsetdata,true));
    if (! $opendate = $wwsetdata['open_date'] ) {
     	error_log(" undefined open date ");
     }
