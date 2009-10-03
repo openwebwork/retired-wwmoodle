@@ -59,9 +59,8 @@ function wwassignment_add_instance($wwassignment) {
     
     //Get data about the set from WebWorK
     $wwclient = new wwassignment_client();
-    $wwcoursename = _wwassignment_mapped_course($COURSE->id,false);
-    $wwsetname = $wwassignment->webwork_set;
-    $wwsetdata = $wwclient->get_assignment_data($wwcoursename,$wwsetname,false);
+    $wwassignment->webwork_course = _wwassignment_mapped_course($COURSE->id,false);
+    $wwsetdata = $wwclient->get_assignment_data($wwassignment->webwork_course,$wwassignment->webwork_set,false);
     
 
     
@@ -74,7 +73,7 @@ function wwassignment_add_instance($wwassignment) {
     	$wwassignment->id = $returnid;
 
 		//Creating events
-		_wwassignment_create_events($wwsetname,$wwassignment->id,$wwsetdata['open_date'],$wwsetdata['due_date']);
+		_wwassignment_create_events($wwassignment,$wwsetdata);
     debugLog("notify gradebook");
 		//notify gradebook
 		 wwassignment_grade_item_update($wwassignment);
@@ -98,9 +97,13 @@ function wwassignment_update_instance($wwassignment) {
     //checking mappings
     $wwclient = new wwassignment_client();
     $wwcoursename = _wwassignment_mapped_course($COURSE->id,false);
+    $wwassignment->webwork_course = $wwcoursename;
     $wwsetname = $wwassignment->webwork_set;
+    $wwsetdata = $wwclient->get_assignment_data($wwcoursename,$wwsetname,false);
+    
     
     //get data from WeBWorK
+
     $wwsetdata = $wwclient->get_assignment_data($wwcoursename,$wwsetname,false);
     $wwassignment->id = $wwassignment->instance;
     $wwassignment->grade = $wwclient->get_max_grade($wwcoursename,$wwsetname,false);
@@ -108,7 +111,7 @@ function wwassignment_update_instance($wwassignment) {
     $returnid = update_record('wwassignment',$wwassignment);
     
     _wwassignment_delete_events($wwassignment->id);
-    _wwassignment_create_events($wwsetname,$wwassignment->id,$wwsetdata['open_date'],$wwsetdata['due_date']);
+    _wwassignment_create_events($wwassignment,$wwsetdata);
     
      //notify gradebook -- update  grades for this wwassignment only
      wwassignment_grade_item_update($wwassignment);
@@ -175,34 +178,7 @@ function wwassignment_delete_instance($wwassignmentid) {
  * @param int $userid optional user id, 0 means all users
  * @return array array of grades, false if none
  */
-// function assignment_get_user_grades($assignment, $userid=0) {
-//     global $CFG;
-// 
-//     $user = $userid ? "AND u.id = $userid" : "";
-// 
-//     $sql = "SELECT u.id, u.id AS userid, s.grade AS rawgrade, s.submissioncomment AS feedback, s.format AS feedbackformat,
-//                    s.teacher AS usermodified, s.timemarked AS dategraded, s.timemodified AS datesubmitted
-//               FROM {$CFG->prefix}user u, {$CFG->prefix}assignment_submissions s
-//              WHERE u.id = s.userid AND s.assignment = $assignment->id
-//                    $user";
-// 
-//     return get_records_sql($sql);
-// }
-// object returned looks like an array of standard objects
-// (
-//     [22] => stdClass Object
-//         (
-//             [userid] => 22
-//             [rawgrade] => -1
-//             [feedback] => 23
-//             [feedbackformat] => 0
-//             [usermodified] => 2
-//             [dategraded] => 1211200838
-//             [datesubmitted] => 1211199392
-//             [id] => 22
-//         )
-// 
-// )
+
 
 function wwassignment_get_user_grades($wwassignment,$userid=0) {
 	debugLog("Begin wwassignment_get_user_grades");
@@ -620,90 +596,10 @@ function wwassignment_get_participants($wwassignmentid) {
     return _wwassignment_get_course_students( $wwassignment->course );
 }
 
-// function assignment_refresh_events($courseid = 0) {
-// 
-//     if ($courseid == 0) {
-//         if (! $assignments = get_records("assignment")) {
-//             return true;
-//         }
-//     } else {
-//         if (! $assignments = get_records("assignment", "course", $courseid)) {
-//             return true;
-//         }
-//     }
-//     $moduleid = get_field('modules', 'id', 'name', 'assignment');
-// 
-//     foreach ($assignments as $assignment) {
-//         $event = NULL;
-//         $event->name        = addslashes($assignment->name);
-//         $event->description = addslashes($assignment->description);
-//         $event->timestart   = $assignment->timedue;
-// 
-//         if ($event->id = get_field('event', 'id', 'modulename', 'assignment', 'instance', $assignment->id)) {
-//             update_event($event);
-// 
-//         } else {
-//             $event->courseid    = $assignment->course;
-//             $event->groupid     = 0;
-//             $event->userid      = 0;
-//             $event->modulename  = 'assignment';
-//             $event->instance    = $assignment->id;
-//             $event->eventtype   = 'due';
-//             $event->timeduration = 0;
-//             $event->visible     = get_field('course_modules', 'visible', 'module', $moduleid, 'instance', $assignment->id);
-//             add_event($event);
-//         }
-// 
-//     }
-//     return true;
-// }
-// 
-
-// function chat_refresh_events($courseid = 0) {
-// // This standard function will check all instances of this module
-// // and make sure there are up-to-date events created for each of them.
-// // If courseid = 0, then every chat event in the site is checked, else
-// // only chat events belonging to the course specified are checked.
-// // This function is used, in its new format, by restore_refresh_events()
-// 
-//     if ($courseid) {
-//         if (! $chats = get_records("chat", "course", $courseid)) {
-//             return true;
-//         }
-//     } else {
-//         if (! $chats = get_records("chat")) {
-//             return true;
-//         }
-//     }
-//     $moduleid = get_field('modules', 'id', 'name', 'chat');
-// 
-//     foreach ($chats as $chat) {
-//         $event = NULL;
-//         $event->name        = addslashes($chat->name);
-//         $event->description = addslashes($chat->intro);
-//         $event->timestart   = $chat->chattime;
-// 
-//         if ($event->id = get_field('event', 'id', 'modulename', 'chat', 'instance', $chat->id)) {
-//             update_event($event);
-// 
-//         } else {
-//             $event->courseid    = $chat->course;
-//             $event->groupid     = 0;
-//             $event->userid      = 0;
-//             $event->modulename  = 'chat';
-//             $event->instance    = $chat->id;
-//             $event->eventtype   = $chat->schedule;
-//             $event->timeduration = 0;
-//             $event->visible     = get_field('course_modules', 'visible', 'module', $moduleid, 'instance', $chat->id);
-// 
-//             add_event($event);
-//         }
-//     }
-//     return true;
-// }
 
 function wwassignment_refresh_events($courseid = 0) {
     error_log('wwassignment_refresh_events called --not yet defined');
+
 // This standard function will check all instances of this module
 // and make sure there are up-to-date events created for each of them.
 // If courseid = 0, then every wwassignment event in the site is checked, else
@@ -744,6 +640,7 @@ function wwassignment_refresh_events($courseid = 0) {
     foreach ($cids as $cid) {
     // connect to WeBWorK
 	$wwcoursename = _wwassignment_mapped_course($cid,false); 
+	$wwassignment->webwork_course = $wwcoursename;
 	if ( $wwcoursename== -1) {
 		error_log("Can't connect course $cid to webwork");
 		break;
@@ -761,10 +658,12 @@ function wwassignment_refresh_events($courseid = 0) {
 			// update event
 			//this part won't work because these items implicitly require the course.
 			_wwassignment_delete_events($wwassignment->id);
-			_wwassignment_create_events($wwsetname,$wwassignment->id,$wwsetdata['open_date'],$wwsetdata['due_date'],$cid);
+			_wwassignment_create_events($wwassignment, $wwsetdata);
 		 }  
 	 
 	} 
+
+
     return true;
 }
 

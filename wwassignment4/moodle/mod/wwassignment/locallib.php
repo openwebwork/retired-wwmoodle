@@ -79,14 +79,32 @@ function _wwassignment_get_course_students($courseid) {
 * @param $duedate integer The UNIX timestamp of the due date.
 * @return integer 0 on success. -1 on error.
 */
-function _wwassignment_create_events($wwsetname,$wwassignmentid,$opendate,$duedate, $courseid=0) {
-    error_log("enter create_events for set $wwsetname id $wwassignmentid date $opendate $duedate course $courseid");
+
+function _wwassignment_create_events($wwassignment,$wwsetdata ) {
+    error_log("enter create_events for set ".$wwassignment->name." id ".$wwassignment->id." date ".$wwsetdata['open_date']." ".$wwsetdata['due_date'] );
     global $COURSE;
+    error_log("set data".print_r($wwsetdata,true));
+   if (! $opendate = $wwsetdata['open_date'] ) {
+    	error_log(" undefined open date ");
+    }
+    if (! $duedate = $wwsetdata["due_date"] ){
+    	error_log(" undefined due date ");
+    }
+    if (! $wwassignmentid = $wwassignment->id ) {
+       	error_log(" undefined ww id ");
+    }
+    if (! $name = $wwassignment->name ) {
+       	error_log(" undefined set name ");
+    }
+    $courseid = $wwassignment->course;
+
     if (!courseid) {
     	$courseid =$COURSE->id;
     }
+     
+
     unset($event);
-    $event->name = addslashes($wwsetname);
+    $event->name = addslashes($name);
     $event->description = 'WeBWorK Set Event';
     $event->courseid = $courseid;
     $event->groupid = 0;
@@ -95,7 +113,6 @@ function _wwassignment_create_events($wwsetname,$wwassignmentid,$opendate,$dueda
     $event->modulename = 'wwassignment';
     $event->instance = $wwassignmentid;
     $event->visible  = 1;    
-    $event->name .= ' is Due.';
     $event->eventtype = 'due';
     $event->timestart = $duedate;
     $event->timeduration = 1;
@@ -126,48 +143,10 @@ function _wwassignment_delete_events($wwassignmentid) {
     }
     return 0;
 }
-// function chat_refresh_events($courseid = 0) {
-// // This standard function will check all instances of this module
-// // and make sure there are up-to-date events created for each of them.
-// // If courseid = 0, then every chat event in the site is checked, else
-// // only chat events belonging to the course specified are checked.
-// // This function is used, in its new format, by restore_refresh_events()
-// 
-//     if ($courseid) {
-//         if (! $chats = get_records("chat", "course", $courseid)) {
-//             return true;
-//         }
-//     } else {
-//         if (! $chats = get_records("chat")) {
-//             return true;
-//         }
-//     }
-//     $moduleid = get_field('modules', 'id', 'name', 'chat');
-// 
-//     foreach ($chats as $chat) {
-//         $event = NULL;
-//         $event->name        = addslashes($chat->name);
-//         $event->description = addslashes($chat->intro);
-//         $event->timestart   = $chat->chattime;
-// 
-//         if ($event->id = get_field('event', 'id', 'modulename', 'chat', 'instance', $chat->id)) {
-//             update_event($event);
-// 
-//         } else {
-//             $event->courseid    = $chat->course;
-//             $event->groupid     = 0;
-//             $event->userid      = 0;
-//             $event->modulename  = 'chat';
-//             $event->instance    = $chat->id;
-//             $event->eventtype   = $chat->schedule;
-//             $event->timeduration = 0;
-//             $event->visible     = get_field('course_modules', 'visible', 'module', $moduleid, 'instance', $chat->id);
-// 
-//             add_event($event);
-//         }
-//     }
-//     return true;
-// }
+
+
+
+
 function _wwassignment_refresh_event($wwassignment) {
 	$cid = $wwassignment->course;
 	$wwcoursename = _wwassignment_mapped_course($cid,false); 
@@ -185,9 +164,10 @@ function _wwassignment_refresh_event($wwassignment) {
 	$returnid = update_record('wwassignment',$wwassignment);
 	// update event
 	_wwassignment_delete_events($wwassignment->id);
-	_wwassignment_create_events($wwsetname,$wwassignment->id,$wwsetdata['open_date'],$wwsetdata['due_date'],$cid);
+	_wwassignment_create_events($wwassignment,$wwsetdata);
 	return true;
 }
+
 
 //////////////////////////////////////////////////////////////////
 //Functions that ensure creation of WeBWorK Data
