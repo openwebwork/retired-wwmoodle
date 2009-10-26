@@ -531,26 +531,30 @@ function wwassignment_update_dirty_sets() {  // update grades for all instances 
 	// means just one database lookup
 
 	$logRecords = get_logs("l.module LIKE \"wwassignment\" AND l.time >$lastcron ", "l.time ASC");
+	// possible actions generating a log entry include view,  update and 'view all'
 	$wwmodificationtime=array();
-	foreach ($logRecords as $record) {     
-		$wwmodtimes[$wwid =$record->info] = $record->time;
+	foreach ($logRecords as $record) { 
+	    $wwid =$record->info;
+	    if ($wwid > 0) { // the $wwid must not be 0 or blank -- blank id's occur for view all.
+			$wwmodtimes[$wwid] = $record->time;
+		}
 	}
 
 	// Create an array with the wwid values
 	$idValues= "( ".implode(",", array_keys($wwmodtimes) ). " )";
-
-	//error_log("values string $idValues");
+    
+	error_log("values string $idValues");
 	//error_log("last modification times".print_r($wwmodtimes,true));
 
 	$sql = "SELECT a.*, cm.idnumber as cmidnumber, a.course as courseid, cm.id as wwinstanceid
 			  FROM {$CFG->prefix}wwassignment a, {$CFG->prefix}course_modules cm, {$CFG->prefix}modules m
 			 WHERE m.name='wwassignment' AND m.id=cm.module AND cm.instance=a.id AND a.id IN $idValues";
-
-	$sql3 = "SELECT a.* FROM {$CFG->prefix}wwassignment a WHERE a.id IN $idValues";
+    error_log("sql $sql");
+	//$sql3 = "SELECT a.* FROM {$CFG->prefix}wwassignment a WHERE a.id IN $idValues";
 	
 	//error_log("last modification times".print_r($wwmodificationtime,true));
-	
-	if ($rs = get_recordset_sql($sql)) {
+	$rs = get_recordset_sql($sql);
+	if ($rs) {
 		while ($wwassignment = rs_fetch_next_record($rs)) {
 			if (!$wwassignment->cmidnumber) { // is this ever needed?
 				$wwassignment->cmidnumber =_wwassignment_cmid() ;
@@ -598,7 +602,7 @@ function wwassignment_get_participants($wwassignmentid) {
 
 
 function wwassignment_refresh_events($courseid = 0) {
-    error_log('wwassignment_refresh_events called --not yet defined');
+ //   error_log('wwassignment_refresh_events called --not yet defined');
 
 // This standard function will check all instances of this module
 // and make sure there are up-to-date events created for each of them.
@@ -606,7 +610,7 @@ function wwassignment_refresh_events($courseid = 0) {
 // only wwassignment events belonging to the course specified are checked.
 // This function is used, in its new format, by restore_refresh_events() and by the cron function
 // 
-    // find wwassignment instances associated with this course or all wwassignment modules
+// find wwassignment instances associated with this course or all wwassignment modules
      $courses = array();  # create array of courses
     if ($courseid) {
         if (! $wwassignments = get_records("wwassignment", "course", $courseid)) {
@@ -632,39 +636,58 @@ function wwassignment_refresh_events($courseid = 0) {
     }
 
  
-    // $courses now holds a list of courses with wwassignment modules
-    $moduleid = _wwassignment_cmid();
-    $cids = array_keys($courses);   # collect course ids
-    error_log("cids".print_r($cids, true));
-    $wwclient = new wwassignment_client();
-    foreach ($cids as $cid) {
-    // connect to WeBWorK
-	$wwcoursename = _wwassignment_mapped_course($cid,false); 
-	$wwassignment->webwork_course = $wwcoursename;
-	if ( $wwcoursename== -1) {
-		error_log("Can't connect course $cid to webwork");
-		break;
+    // $courses now holds a list of course wwassignments
+
+    if ( $wwclient = new wwassignment_client() ) {
+        $moduleid = _wwassignment_cmid();
+		$cids = array_keys($courses);   # collect course ids
+		error_log("course ids  ".print_r($cids, true));
+		foreach ($cids as $cid) {
+		    error_log("processing cid $cid");
+			// connect to WeBWorK
+			$wwcoursename = _wwassignment_mapped_course($cid,false); 
+			$wwassignment->webwork_course = $wwcoursename;
+			if ( $wwcoursename== -1) {
+				error_log("Can't connect course $cid to webwork");
+				break;
+			}
+	
+		    // retrieve wwassignments associated with this course
+			foreach($courses[$cid] as $wwassignment ) {
+			   if (!isset($wwassignment)) {
+			   		error_log("no wwassignments yet");
+			   		break;
+			   	}
+			   //checking mappings
+			    $wwsetname = $wwassignment->webwork_set;
+			    error_log(" wwassignment_refresh_events updating events for course |$wwcoursename| set |$wwsetname| "    );
+				if ( isset($wwsetname) ) {
+					
+					//get data from WeBWorK
+					$wwsetdata                  = $wwclient->get_assignment_data($wwcoursename,$wwsetname,false);
+					$wwassignment->grade        = $wwclient->get_max_grade($wwcoursename,$wwsetname,false);	
+					$wwassignment->timemodified = time();
+					$returnid = update_record('wwassignment',$wwassignment);
+					// update event
+					//this part won't work because these items implicitly require the course.
+					if (  isset( $wwsetdata )  ) {
+						_wwassignment_delete_events($wwassignment->id);
+						_wwassignment_create_events($wwassignment, $wwsetdata);
+					} else {
+						error_log("Can't update events for course |$wwcoursename| set |$wwsetname|");
+					}
+					error_log("Done updating course |$wwcoursename| set |$wwsetname|");
+				} else {
+					error_log ("no wwsetname |$wwsetname|"  );
+				}
+			 }  
+		} 
+		error_log("done with cids");
+   	} else {
+		error_log("Can't connect to webwork course");
 	}
-	// retrieve wwassignments associated with this course
-		foreach($courses[$cid] as $wwassignment ) {
- 		   //checking mappings
-			$wwsetname = $wwassignment->webwork_set;
- 			error_log("updating events for $wwcoursename $wwsetname");
- 			//get data from WeBWorK
-			$wwsetdata = $wwclient->get_assignment_data($wwcoursename,$wwsetname,false);
-			$wwassignment->grade = $wwclient->get_max_grade($wwcoursename,$wwsetname,false);
-			$wwassignment->timemodified = time();
-			$returnid = update_record('wwassignment',$wwassignment);
-			// update event
-			//this part won't work because these items implicitly require the course.
-			_wwassignment_delete_events($wwassignment->id);
-			_wwassignment_create_events($wwassignment, $wwsetdata);
-		 }  
-	 
-	} 
-
-
-    return true;
+    error_log("done with wwassignment_refresh_events() ");
+    return(true);
 }
 
 
