@@ -104,7 +104,7 @@ function _wwassignment_create_events($wwassignment,$wwsetdata ) {
      
 
     unset($event);
-    $event->name = addslashes($name);
+    $event->name = addslashes($name); // backslash characters where necessary
     $event->description = 'WeBWorK Set Event';
     $event->courseid = $courseid;
     $event->groupid = 0;
@@ -137,7 +137,7 @@ function _wwassignment_create_events($wwassignment,$wwsetdata ) {
 function _wwassignment_delete_events($wwassignmentid) {
     if ($events = get_records_select('event', "modulename = 'wwassignment' and instance = '$wwassignmentid'")) {
         foreach($events as $event) {
-               // error_log("deleting  event ".$event->id);
+               error_log("deleting  event ".$event->id);
             delete_event($event->id);
         }
     }
@@ -156,7 +156,7 @@ function _wwassignment_refresh_event($wwassignment) {
 	}
 	$wwclient = new wwassignment_client();   
 	$wwsetname = $wwassignment->webwork_set;
-	error_log("updating events for $wwcoursename $wwsetname");
+	error_log(" _wwassignment_refresh_eventsupdating events for $wwcoursename $wwsetname");
 	//get data from WeBWorK
 	$wwsetdata = $wwclient->get_assignment_data($wwcoursename,$wwsetname,false);
 	$wwassignment->grade = $wwclient->get_max_grade($wwcoursename,$wwsetname,false);
