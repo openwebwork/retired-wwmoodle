@@ -1,0 +1,36 @@
+<?php
+    global $CFG;
+    $lib = $CFG->dirroot . '/mod/wwassignment/locallib.php';
+?>
+<table cellpadding="9" cellspacing="0" align="center">
+    <?php if(!file_exists($lib)) { ?>
+    <tr valign="top">
+        <td align="center">
+            <?php echo '<strong>'.get_string('config_wwassigment_mod_missing','block_wwlink').'</strong>'; ?>     
+        </td>
+    </tr>
+    <?php } else { ?>
+    <tr valign="top">
+
+        <td align="right">
+            <?php print_string('config_select_webwork_course', 'block_wwlink'); ?>
+        </td>
+        <td align="center">
+            <?php
+                require_once($lib);
+                $client = new wwassignment_client();
+                $options = $client->options_course(true);
+                choose_from_menu($options,'webwork_link_id',empty($this->config->webwork_link_id) ? 0 : $this->config->webwork_link_id);
+                global $COURSE;
+                $courseid = $COURSE->id;
+            ?>
+            <input type="hidden" name="courseid" value="<?php echo $courseid;?>" />   
+        </td>
+    </tr>
+    <tr>
+        <td colspan="2" align="center">
+            <input type="submit" value="<?php print_string('savechanges') ?>" />
+        </td>
+    </tr>
+    <?php } ?>
+</table>
