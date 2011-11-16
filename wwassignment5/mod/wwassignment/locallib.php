@@ -82,20 +82,20 @@ function _wwassignment_get_course_students($courseid) {
 */
 
 function _wwassignment_create_events($wwassignment,$wwsetdata ) {
-    error_log("enter create_events for set ".$wwassignment->name." id ".$wwassignment->id." date ".$wwsetdata['open_date']." ".$wwsetdata['due_date'] );
+//    error_log("enter create_events for set ".$wwassignment->name." id ".$wwassignment->id." date ".$wwsetdata['open_date']." ".$wwsetdata['due_date'] );
     global $COURSE;
     //error_log("set data".print_r($wwsetdata,true));
    if (! $opendate = $wwsetdata['open_date'] ) {
-    	error_log(" undefined open date ");
+//    	error_log(" undefined open date ");
     }
     if (! $duedate = $wwsetdata["due_date"] ){
-    	error_log(" undefined due date ");
+//    	error_log(" undefined due date ");
     }
     if (! $wwassignmentid = $wwassignment->id ) {
-       	error_log(" undefined ww id ");
+//       	error_log(" undefined ww id ");
     }
     if (! $name = $wwassignment->name ) {
-       	error_log(" undefined set name ");
+//       	error_log(" undefined set name ");
     }
     $courseid = $wwassignment->course;
 
@@ -121,9 +121,9 @@ function _wwassignment_create_events($wwassignment,$wwsetdata ) {
     // error_log("adding a due event");
     $result = 0;
     $calendareventid = add_event($event);
-    error_log("calendareventid $calendareventid created");
+//    error_log("calendareventid $calendareventid created");
     if(!$calendareventid) {
-        error_log("can't create calendarevent for set $wwsetname wwid $wwassignmentid date $opendate $duedate course $courseid");
+//        error_log("can't create calendarevent for set $wwsetname wwid $wwassignmentid date $opendate $duedate course $courseid");
         $result = -1;
     }
     return $result;

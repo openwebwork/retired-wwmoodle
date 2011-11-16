@@ -3,6 +3,7 @@
 // language strings for wwmoodle_set
 
 $string['pluginname'] = 'WeBWorK Assignment';
+$string['pluginadministration'] = 'WeBWorK Administration';
 $string['modulename'] = "WeBWorK Problem Set";
 $string['modulenameplural'] = "WeBWorK Problem Sets";
 
@@ -32,7 +33,7 @@ $string['wwassignmentname'] = 'Name';
 $string['webwork_set'] = 'WeBWorK Set';
 $string['instructor_page_link_desc'] = 'Link to the Instructor Section of WeBWorK';
 $string['instructor_page_link_name'] = 'Go To WeBWorK Instructor Tools';
-
+$string['webwork_set_help'] = 'Select the WeBWorK problem set to assign from the dropdown list.  If a set does not appear in this list, make sure it is visible in the WeBWorK course.';
 $string['edit_set_link_desc'] = 'Link to Set Modification Section of WeBWorK';
 $string['edit_set_link_name'] = 'Modify Set';
 

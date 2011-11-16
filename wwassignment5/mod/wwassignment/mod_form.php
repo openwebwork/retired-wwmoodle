@@ -5,7 +5,7 @@ require_once ('locallib.php');
 class mod_wwassignment_mod_form extends moodleform_mod {
     
     function definition() {
-        global $COURSE,$USER;
+        global $COURSE,$USER,$OUTPUT;
         $mform =& $this->_form;
         
         //Is this particular course mapped to a course in WeBWorK   
@@ -22,6 +22,7 @@ class mod_wwassignment_mod_form extends moodleform_mod {
         
         $wwinstructorlink = _wwassignment_link_to_instructor_auto_login($wwcoursename,$wwusername,$wwkey);
         
+	
         $mform->addElement('link','instructor_page_link',
 							get_string('instructor_page_link_desc','wwassignment'),
 							$wwinstructorlink,get_string('instructor_page_link_name','wwassignment'));
@@ -51,6 +52,7 @@ class mod_wwassignment_mod_form extends moodleform_mod {
         //set select
         $options = $wwclient->options_set($wwcoursename,false);
         $mform->addElement('select','webwork_set',get_string('webwork_set','wwassignment'),$options);
+//	$OUTPUT->help_icon('enablenotification','assignment');
         $mform->setHelpButton('webwork_set', array('webwork_set', get_string('webwork_set', 'wwassignment'), 'wwassignment'));
         
         //description
