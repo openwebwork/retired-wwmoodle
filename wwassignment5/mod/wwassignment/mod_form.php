@@ -53,12 +53,12 @@ class mod_wwassignment_mod_form extends moodleform_mod {
         $options = $wwclient->options_set($wwcoursename,false);
         $mform->addElement('select','webwork_set',get_string('webwork_set','wwassignment'),$options);
 //	$OUTPUT->help_icon('enablenotification','assignment');
-        $mform->setHelpButton('webwork_set', array('webwork_set', get_string('webwork_set', 'wwassignment'), 'wwassignment'));
+        $mform->addHelpButton('webwork_set', 'webwork_set', 'wwassignment');
         
         //description
         $mform->addElement('htmleditor', 'description', get_string('description', 'assignment'));
         $mform->setType('description', PARAM_RAW);
-        $mform->setHelpButton('description', array('writing', 'questions', 'richtext'), false, 'editorhelpbutton');
+        $mform->addHelpButton('description', 'writing', 'wwassignment');
         
         $features = new stdClass;
         $features->gradecat = true;
