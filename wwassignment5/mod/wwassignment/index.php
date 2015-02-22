@@ -19,7 +19,11 @@ if (!$course = $DB->get_record("course", array( "id" => $id ))) {
  
 //force login   
 require_login($course->id);
-add_to_log($course->id, "wwassignment", "view all", "index.php?id=$course->id", "");
+//add_to_log($course->id, "wwassignment", "view all", "index.php?id=$course->id", "");
+$event = \mod_wwassignment\event\course_module_instance_list_viewed::create(array(
+    'context' => context_course::instance($course->id)
+));
+$event->trigger();
 
 //Get all required strings
 $strwwassignments = get_string("modulenameplural", "wwassignment");
@@ -37,6 +41,8 @@ $PAGE->set_cacheable(true);
 $PAGE->set_focuscontrol("");
 $PAGE->set_button("");
 $PAGE->navbar->add("$strwwassignments");
+$page_url = new moodle_url('/wwassignment/index.php',array('id' => $course->id) );
+$PAGE->set_url($page_url);
 echo $OUTPUT->header();
 
 //Get all the appropriate data
@@ -96,7 +102,7 @@ foreach ($wwassignments as $wwassignment) {
 
 echo "<br />";
     
-print_table($table);
+echo html_writer::table($table);
 
 /*if( isteacher($course->id) ) {
     $wwusername = $USER->username;

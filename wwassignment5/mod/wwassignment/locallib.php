@@ -44,7 +44,7 @@ function debugLog($message) {
 function _wwassignment_get_course_students($courseid) {
     debugLog("Begin get_course_students($courseid )");
     debugLog("courseID is ". print_r($courseid, true));
-	$context = get_context_instance(CONTEXT_COURSE, $courseid);
+	$context = context_course::instance($courseid);
 	debugLog("context is ". print_r($context, true));
 	
 	$users = array();
@@ -247,7 +247,7 @@ function _wwassignment_mapped_course($courseid,$silent = true) {
     global $DB;
     $blockinstance = $DB->get_record('block_instances', array(
                'blockname'=>'wwlink',
-	       'parentcontextid'=>get_context_instance(CONTEXT_COURSE,$courseid)->id, 
+	       'parentcontextid'=>context_course::instance($courseid)->id, 
  	       'pagetypepattern'=>'course-view-*' ));    
     //error_log("block instance".print_r($blockinstance,true));
     $block_config = unserialize(base64_decode($blockinstance->configdata));
