@@ -29,7 +29,7 @@ class block_wwlink extends block_base {
     
 
     function user_can_edit() {
-	$test = has_capability('moodle/site:manageblocks',get_context_instance(CONTEXT_SYSTEM));
+	$test = has_capability('moodle/site:manageblocks',context_system::instance());
 	return (parent::user_can_edit() && $test);
     } 
 
@@ -38,8 +38,12 @@ class block_wwlink extends block_base {
 
     function get_content() {
         global $COURSE;
-//        print_r($this->config  );
+        if ($this->content !== null) {
+		  return $this->content;
+		}
+        //print_r(get_string('pluginname','block_wwlink'));
 		$wwlinkdata = $this->config;
+		$this->content = new stdClass;
 		if (!isset($wwlinkdata) || !$wwlinkdata->wwlink_id ) {	 // need webwork_link_id to exist and be non-zero
 			$this->content->text = get_string('not_connected','block_wwlink');
 		} else {	

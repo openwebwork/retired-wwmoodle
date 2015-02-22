@@ -15,15 +15,16 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Strings for component 'wwlink', language 'en', branch 'MOODLE_28_STABLE'
+ * Language file for block "badges"
  *
- * @package   wwlink
- * @copyright 2015 onwards Michael Gage  
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package    block_badges
+ * @copyright  2012 onwards Totara Learning Solutions Ltd {@link http://www.totaralms.com/}
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @author     Yuliya Bozhko <yuliya.bozhko@totaralms.com>
  */
-
 $string['pluginname'] = 'wwlink';
 $string['blockname'] = 'WeBWorK Link';
 $string['not_connected'] = 'Not Connected to WeBWorK';
 $string['connected'] = 'Connected to WeBWorK Course:';
 $string['select_course'] = 'Select WeBWorK Course:';
+$string['foobar']='FOOBAR';
