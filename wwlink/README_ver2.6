@@ -1,0 +1,30 @@
+Webwork <-> Moodle wwlink Block (Bridge 1 -- assignment level)
+Maintainer: Matthew Leventi (mleventi@gmail.com)
+----------------------------------------------
+
+Description:
+This creates a link to WeBWorK from Moodle for assignments.  Use this with
+mod/wwassignment 
+
+Prerequisites:
+1) An installation of WeBWorK.
+2) The wwassignment module should be installed in your installation of Moodle.
+
+Note: It does not matter which you install first, or if you install both of them at the same time, 
+but the wwlink block and the wwassignment module must be present in your moodle installation before either of them is used.
+
+Installation:
+1) Copy the wwlink folder into the blocks directory
+    ex: cp -R wwlink /your/moodle/blocks
+3) Point your browser to the moodle admin page
+    ex : http://www.example.org/moodle/admin
+
+Use:
+1) In the main page of your course turn editing on.
+2) Add a new WeBWorK Link block using the dropdown.
+3) Edit the WeBWorK Link block.
+4) Choose a webwork course to connect to.
+5) Confirm.
+6) All WW assignments from within this moodle course will be through this connected webwork course.
+
+
