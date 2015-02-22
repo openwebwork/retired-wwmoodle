@@ -18,7 +18,31 @@ class block_wwlink extends block_base {
         return true;
     }
     
- 
+    /**
+    * @desc Saves the form data from configuration into the wwassignment_bridge table.
+    */
+    function instance_config_save($data) {
+        
+        $webworkcourse = $data->webwork_link_id;
+        $moodlecourse = $data->courseid;
+        
+        $wwassignmentbridge = new stdClass;
+        $wwassignmentbridge->course = $moodlecourse;
+        $wwassignmentbridge->webwork_course = $webworkcourse;
+        
+        //has this mapping been defined
+        $record = get_record('wwassignment_bridge','course',$moodlecourse);
+        if(!$record) {
+            //new one
+            insert_record('wwassignment_bridge',$wwassignmentbridge);
+        } else {
+            //update
+            $wwassignmentbridge->id = $record->id;
+            update_record('wwassignment_bridge',$wwassignmentbridge);
+        }
+        
+        return parent::instance_config_save($data);        
+    }
     
     /**
     * @desc Makes sure that the only place this block can be added is on course-view page. This insures one block per course.
