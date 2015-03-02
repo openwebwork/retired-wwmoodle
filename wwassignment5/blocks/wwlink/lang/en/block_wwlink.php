@@ -1,5 +1,4 @@
 <?php
-
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -16,10 +15,10 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Strings for component 'block_mentees', language 'en', branch 'MOODLE_20_STABLE'
+ * Strings for component 'wwlink', language 'en', branch 'MOODLE_28_STABLE'
  *
- * @package   block_mentees
- * @copyright 1999 onwards Martin Dougiamas  {@link http://moodle.com}
+ * @package   wwlink
+ * @copyright 2015 onwards Michael Gage  
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
