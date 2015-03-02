@@ -30,7 +30,7 @@ class block_wwlink extends block_base {
     
 
 function user_can_edit() {
-	require_capability('moode/site:doanything',get_context_instance(CONTEXT_SYSTEM));
+	require_capability('moodle/site:doanything',get_context_instance(CONTEXT_SYSTEM));
 	return parent::user_can_edit();
 }
 

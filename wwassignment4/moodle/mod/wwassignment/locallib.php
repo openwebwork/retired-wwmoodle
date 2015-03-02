@@ -408,8 +408,9 @@ class wwassignment_client {
                 
                 //$result = call_user_func_array(array(&$this->client,$functioncall),$params);
                 if($err = $this->client->getError()) {
-                        //print_error(get_string("rpc_fault","wwassignment') . " " . $functioncall. " ". $err);
-                        print_error('rpc_error','wwassignment');  
+                        print_error(get_string("rpc_fault",'wwassignment') . " " . $functioncall. " ". print_r($params,true). " ". print_r($err, true) );
+                        //print_error('rpc_error','wwassignment');
+                         
                 }
                 return $result;
         }
