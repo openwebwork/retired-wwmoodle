@@ -15,4 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-$plugin->version = 2010102600;
+defined('MOODLE_INTERNAL') || die();
+
+$plugin->version   = 2015022101;        // The current plugin version (Date: YYYYMMDDXX)
+$plugin->requires  = 2014110400;        // Requires this Moodle version
+$plugin->component = 'wwlink'; // Full name of the plugin (used for diagnostics)
+
+
